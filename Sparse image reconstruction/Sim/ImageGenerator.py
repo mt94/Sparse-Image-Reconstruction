@@ -1,18 +1,19 @@
 import abc
 import numpy as np
+import Channel.ChannelBlock as chb
 
-class AbstractImageGenerator(object):    
-    __metaclass__ = abc.ABCMeta
-    
+class AbstractImageGenerator(chb.AbstractChannelBlock):        
     # Input keys
     INPUT_KEY_IMAGE_SHAPE = 'image_shape'
     INPUT_KEY_NUM_NONZERO = 'num_nonzero'
     INPUT_KEY_BORDER_WIDTH = 'border_width'
+    CHANNEL_BLOCK_TYPE = 'ImageGenerator'
 
     def __init__(self):
+        super(AbstractImageGenerator,self).__init__(AbstractImageGenerator.CHANNEL_BLOCK_TYPE)
         self.imageShape = None
         self.numNonzero = 0
-        self.borderWidth = 0
+        self.borderWidth = 0        
 
     def SetParameters(self, **kwargs):
         # Ensure that mandatory keys are present
@@ -35,7 +36,9 @@ class AbstractImageGenerator(object):
     def Generate(self):
         raise NotImplementedError('No default abstract method implementation')
     
-class RandomBinary2dImageGenerator(AbstractImageGenerator):                        
+class RandomBinary2dImageGenerator(AbstractImageGenerator):    
+    def __init__(self):
+        super(RandomBinary2dImageGenerator, self).__init__()                    
     def Generate(self):
         assert self.imageShape is not None
         img = np.zeros(self.imageShape)
@@ -89,7 +92,7 @@ class RandomUniform2dImageGenerator(AbstractImageGenerator):
                 numNonzero += 1
         return img
                     
-class ImageGeneratorFactory:
+class ImageGeneratorFactory(object):
     _concreteImageGenerator = {
                                'random_binary_2d': RandomBinary2dImageGenerator,
                                'random_uniform_2d': RandomUniform2dImageGenerator

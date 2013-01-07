@@ -1,9 +1,10 @@
 import numpy as np
-import Reconstructor
+import Recon.Reconstructor as Reconstructor
 
 class L2NormMinimizer(Reconstructor.AbstractReconstructor):
             
     def __init__(self, constL2PenaltyOnTheta=None):
+        super(L2NormMinimizer, self).__init__()
         assert constL2PenaltyOnTheta >= 0
         self.constL2PenaltyOnTheta = constL2PenaltyOnTheta
         
@@ -18,17 +19,15 @@ class L2NormMinimizer(Reconstructor.AbstractReconstructor):
             fnFft = np.fft.fftn
             fnFftInverse = np.fft.ifftn
                         
-        HFft = fnFft(H)            
-        yFft = fnFft(y)          
+        HFft = fnFft(np.array(H))            
+        yFft = fnFft(np.array(y))          
     
-        S = HFft.getH() * HFft
+        S = np.conjugate(HFft) * HFft
         if (self.constL2PenaltyOnTheta is not None):
             S = S + self.constL2PenaltyOnTheta * np.identity(S.shape[0])
-        
-        # Assume that S has full rank. If not, then the solve won't work.
-        assert np.linalg.matrix_rank(S, 1e-6) == S.shape[0]
-                
-        return fnFftInverse(np.linalg.solve(S, HFft.getH()*yFft))
+                        
+        #return fnFftInverse(np.linalg.solve(S, HFft.getH()*yFft)).real
+        return fnFftInverse((np.conjugate(HFft)*yFft)/S).real
             
         
             

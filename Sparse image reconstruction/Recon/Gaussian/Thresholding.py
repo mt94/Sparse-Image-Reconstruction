@@ -10,9 +10,13 @@ class AbstractThresholding(object):
         return xIn
     
 class ThresholdingIdentity(AbstractThresholding):
-    def Apply(self,xIn):
+    def Apply(self, xIn):
         return super(ThresholdingIdentity, self).Apply(xIn)
     
+class ThresholdingIdentityNonnegative(AbstractThresholding):
+    def Apply(self, xIn):
+        return np.piecewise(xIn, [xIn < 0, xIn >= 0], [0, lambda x:x])
+        
 # Soft thresholding    
 class ThresholdingSoft(AbstractThresholding):
     def __init__(self, t):
