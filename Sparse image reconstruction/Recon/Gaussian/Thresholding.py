@@ -33,6 +33,15 @@ class ThresholdingHard(AbstractThresholding):
         assert t >= 0
         self.t = t
     def Apply(self, xIn):
-        return np.piecewise(xIn, [xIn < self.t, abs(xIn) <= self.t, xIn > self.t], [lambda x:x, 0, lambda x:x])        
+        return np.piecewise(xIn, [xIn < -self.t, abs(xIn) <= self.t, xIn > self.t], [lambda x:x, 0, lambda x:x])        
         
+# Hybrid thresholding
+class ThresholdingHybrid(AbstractThresholding):
+    def __init__(self, t1, t2):
+        assert (t1 >= 0) and (t2 >= 0)
+        self.t = (t1, t2)
+    def Apply(self, xIn):
+        return np.piecewise(xIn, 
+                            [xIn < -self.t[0], abs(xIn) <= self.t[0], xIn > self.t[0]], 
+                            [lambda x: x + self.t[1], 0, lambda x: x - self.t[1]])
     

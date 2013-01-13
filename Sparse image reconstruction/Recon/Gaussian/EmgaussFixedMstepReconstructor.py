@@ -6,6 +6,10 @@ class EmgaussFixedMstepReconstructor(AbstractEmgaussReconstructor):
         super(EmgaussFixedMstepReconstructor, self).__init__(optimSettingsDict)
         assert funcMstep is not None and isinstance(funcMstep, types.FunctionType)
         self.funcMstep = funcMstep
-        
-    def Mstep(self, x):
+
+    """ Abstract methods implementation """
+    def SetupBeforeIterations(self):
+        pass # Do nothing
+            
+    def Mstep(self, x, numIter):
         return self.funcMstep(x)

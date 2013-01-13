@@ -8,14 +8,17 @@ from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFac
 from Recon.PsfNormalizer import PsfNormalizer
 
 class GaussianBlurWithNoise(AbstractExample):   
-    def __init__(self):
+    def __init__(self, noiseSigma=None, snrDb=None):
         super(GaussianBlurWithNoise, self).__init__('Gaussian Blur with additive Gaussian noise')
         self.blurredImageWithNoise = None
-        self.channelChain = None
+        self.channelChain = None        
+        self.noiseSigma = noiseSigma
+        self.snrDb = snrDb
          
     def RunExample(self):        
         # Construct the processing chain
         channelChain = ChannelProcessingChain(True)
+        
         ig = ImageGeneratorFactory.GetImageGenerator('random_binary_2d')
         ig.SetParameters(**{ 
                             AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32),
@@ -24,22 +27,38 @@ class GaussianBlurWithNoise(AbstractExample):
                            }
                          )                                                                                                        
         channelChain.channelBlocks.append(ig)
+        
         blurParametersDict = {
                               Blur.INPUT_KEY_FWHM: 3,
                               Blur.INPUT_KEY_NKHALF: 5                              
                               }
         gb = Blur(Blur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)        
         channelChain.channelBlocks.append(gb)
+        
         ng = NoiseGeneratorFactory.GetNoiseGenerator('additive_gaussian')
-        ng.SetParameters(**{
-                            AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: 2e-3
-                            }
-                         )
+        if (self.noiseSigma is not None) and (self.noiseSigma >= 0):
+            ng.SetParameters(**{
+                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: self.noiseSigma
+                                }
+                             )
+        elif (self.snrDb is not None):
+            ng.SetParameters(**{
+                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: self.snrDb
+                                }
+                             )
+        else:
+            raise NameError('noiseSigma or snrDb must be set')            
         channelChain.channelBlocks.append(ng)
         
         # Run
         self.channelChain = channelChain
         self.blurredImageWithNoise = channelChain.RunChain()
+        if (self.noiseSigma is not None) and (self.snrDb is None):
+            # Update snrDb
+            self.snrDb = ng.snrDb
+        elif (self.noiseSigma is None) and (self.snrDb is not None):
+            # Update noiseSigma
+            self.noiseSigma = ng.gaussianNoiseSigma
                     
         """ Calculate the spectral radius of H*H^T. Must do this after running the chain,
             since gb.blurPsf is only created when the Blur channel block gets called. This
@@ -48,12 +67,12 @@ class GaussianBlurWithNoise(AbstractExample):
         """
         gbNormalizer = PsfNormalizer(1)
         gbNormalizer.NormalizePsf(gb.BlurPsfInThetaFrame)
-        print 'Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
+#        print 'Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
                 
         
     
 if __name__ == "__main__":    
-    ex = GaussianBlurWithNoise()
+    ex = GaussianBlurWithNoise(snrDb=2)
     ex.RunExample()
     # In order to remove the shift, must access the Blur block in the channel chain
     blurredImageWithNoiseForDisplay = ex.channelChain \
@@ -63,6 +82,8 @@ if __name__ == "__main__":
     plt.imshow(ex.channelChain.intermediateOutput[0])
     plt.figure(2)
     plt.imshow(blurredImageWithNoiseForDisplay)
+    plt.colorbar()
+    plt.show()
     # Optionally, plt.colorbar()
     # Run plt.ion() followed by plt.show() in ipython
 

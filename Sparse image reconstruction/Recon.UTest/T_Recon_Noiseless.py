@@ -1,40 +1,29 @@
 import unittest
 import numpy as np
 import cProfile
+import pylab as plt
 
-from Channel.ChannelProcessingChain import ChannelProcessingChain
+#from Channel.ChannelProcessingChain import ChannelProcessingChain
+from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
 from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.Gaussian.Thresholding import ThresholdingIdentity
 from Recon.NormMinimizer.L2NormMinimizer import L2NormMinimizer
 from Recon.PsfNormalizer import PsfNormalizer
-from Sim.Blur import Blur
-from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory
-
-import pylab as plt
+from Recon.AbstractInitialEstimator import InitialEstimatorFactory
+#from Sim.Blur import Blur
+#from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory
 
 class T_Recon_Noiseless(unittest.TestCase):
     
+    testMessages = []
+    
     def setUp(self):
-        # Construct the processing chain and execute
-        channelChain = ChannelProcessingChain(True)
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary_2d')
-        ig.SetParameters(**{ 
-                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32),
-                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 8,
-                            AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: 5
-                           }
-                         )                                                                                                        
-        channelChain.channelBlocks.append(ig)
-        blurParametersDict = {
-                              Blur.INPUT_KEY_FWHM: 3,
-                              Blur.INPUT_KEY_NKHALF: 5                              
-                              }
-        gb = Blur(Blur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)        
-        channelChain.channelBlocks.append(gb)
-        self.channelChain = channelChain        
-        self.blurredImage = channelChain.RunChain() # No noise added        
+        ex = GaussianBlurWithNoise(0)
+        ex.RunExample()
+        self.channelChain = ex.channelChain        
+        self.blurredImage = ex.blurredImageWithNoise # Since we specified a sigma of 0, the image is noiseless
         
     def testLandweberIterations(self):        
         # Set up Landweber iterations
@@ -43,7 +32,7 @@ class T_Recon_Noiseless(unittest.TestCase):
         tIdentity = ThresholdingIdentity()
         emgIterationsObserver = EmgaussIterationsObserver({
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_COND: EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2,
-                                                           EmgaussIterationsObserver.INPUT_KEY_TERMINATE_TOL: 1e-6                                                
+                                                           EmgaussIterationsObserver.INPUT_KEY_TERMINATE_TOL: 1e-7                                                
                                                            })
         emg = EmgaussFixedMstepReconstructor(
             {
@@ -56,15 +45,18 @@ class T_Recon_Noiseless(unittest.TestCase):
         
         # Run the Landweber iterations and verify that it recovers the original image exactly.
         # This is possible since there's no noise.
-        thetaEstimated = emg.Estimate(self.blurredImage, 
-                                      self.channelChain.channelBlocks[1].BlurPsfInThetaFrame, 
-                                      np.zeros(self.blurredImage.shape)
+        y = self.blurredImage
+        H = self.channelChain.channelBlocks[1].BlurPsfInThetaFrame
+        thetaEstimated = emg.Estimate(y, 
+                                      H,
+                                      InitialEstimatorFactory.GetInitialEstimator('Hty')
+                                                             .GetInitialEstimate(y, H)                                       
                                       )            
-        print "Landweber iterations: termination reason: ", emg.TerminationReason
+        T_Recon_Noiseless.testMessages.append("Landweber iterations: termination reason: " + emg.TerminationReason)
         
         theta = self.channelChain.intermediateOutput[0]
         estimationErrorL2Norm = np.linalg.norm(theta - thetaEstimated, 2)
-        print "Landweber iterations: estimation error l_2 norm: ", estimationErrorL2Norm      
+        T_Recon_Noiseless.testMessages.append("Landweber iterations: estimation error l_2 norm: " + str(estimationErrorL2Norm))      
         # Loose assertion. Landweber iterations converge to the deconvolution solution,
         # but convergence is slow
         self.assertLess(estimationErrorL2Norm, 1)
@@ -87,7 +79,7 @@ class T_Recon_Noiseless(unittest.TestCase):
                                          None)
         theta = self.channelChain.intermediateOutput[0]
         estimationErrorL2Norm = np.linalg.norm(theta - thetaEstimated, 2)
-        print "deconvolution test: estimation error l_2 norm: ", estimationErrorL2Norm             
+        T_Recon_Noiseless.testMessages.append("deconvolution test: estimation error l_2 norm: " + str(estimationErrorL2Norm))             
         self.assertLess(estimationErrorL2Norm, 1e-9)     
         
 #        nFigStart = 4
@@ -104,7 +96,8 @@ class T_Recon_Noiseless(unittest.TestCase):
     @classmethod        
     def tearDownClass(cls):
 #        plt.show()
-        pass
+        for testMessage in cls.testMessages:
+            print testMessage
         
 if __name__ == "__main__":
     cProfile.run("unittest.main()")
