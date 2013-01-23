@@ -58,7 +58,7 @@ class LazeMap2DynamicThresholding(AbstractDynamicThresholding):
     def GetDynamicThreshold(self, hyperparameter, **kwargs):
         assert "alphaVal" in kwargs
         alpha = kwargs['alphaVal']    
-        (a, w, r) = hyperparameter # hyperparameter = (a,w,r)        
+        (a, _, r) = hyperparameter # hyperparameter = (a,w,r)        
         cTmp = a*alpha*alpha                
         assert r >= 0        
         if (r >= 1):            

@@ -6,6 +6,7 @@ class AbstractIterationsObserver(object):
     def __init__(self):
         self._bRequireFitError = False
         
+    """ Return true if fitErrorN is required in CheckTerminateCondition """
     @property
     def RequireFitError(self):
         return self._bRequireFitError

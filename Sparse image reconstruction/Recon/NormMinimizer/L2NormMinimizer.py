@@ -1,10 +1,10 @@
 import numpy as np
 import Recon.Reconstructor as Reconstructor
 
-class L2NormMinimizer(Reconstructor.AbstractReconstructor):
+class L2NormMinimizerReconstructor(Reconstructor.AbstractReconstructor):
             
     def __init__(self, constL2PenaltyOnTheta=None):
-        super(L2NormMinimizer, self).__init__()
+        super(L2NormMinimizerReconstructor, self).__init__()
         assert constL2PenaltyOnTheta >= 0
         self.constL2PenaltyOnTheta = constL2PenaltyOnTheta
         

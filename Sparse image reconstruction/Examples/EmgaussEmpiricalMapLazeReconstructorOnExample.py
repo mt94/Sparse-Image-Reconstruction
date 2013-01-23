@@ -7,9 +7,9 @@ from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstru
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 from Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
-from Recon.PsfNormalizer import PsfNormalizer
+from Recon.PsfNormalizer import PsfMatrixNormNormalizer
 
-class GaussianBlurWithNoiseEmpiricalMapLazeReconstruction(AbstractExample):
+class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
     
     _concreteMapReconstructor = {
                                  'map1': EmgaussEmpiricalMapLaze1Reconstructor,
@@ -17,9 +17,9 @@ class GaussianBlurWithNoiseEmpiricalMapLazeReconstruction(AbstractExample):
                                  }
     
     def __init__(self, estimatorDesc, noiseSigma=None, snrDb=None, r=None, gSup=None):
-        super(GaussianBlurWithNoiseEmpiricalMapLazeReconstruction, self).__init__()
+        super(EmgaussEmpiricalMapLazeReconstructorOnExample, self).__init__('Empirical MAP LAZE Reconstructor example')
         
-        if estimatorDesc not in GaussianBlurWithNoiseEmpiricalMapLazeReconstruction._concreteMapReconstructor:
+        if estimatorDesc not in EmgaussEmpiricalMapLazeReconstructorOnExample._concreteMapReconstructor:
             raise NotImplementedError(estimatorDesc + ' is an unrecognized MAP reconstructor')
         else:
             self.estimatorDesc = estimatorDesc        
@@ -54,8 +54,8 @@ class GaussianBlurWithNoiseEmpiricalMapLazeReconstruction(AbstractExample):
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_COND: EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2,
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_TOL: 1e-7                                                
                                                            })        
-        gbNormalizer = PsfNormalizer(1)
-        gbNormalizer.NormalizePsf(H)        
+        gbNormalizer = PsfMatrixNormNormalizer(1)
+        gbNormalizer.NormalizeLinearOperator(H)        
         optimSettingsDict = \
         {
             AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 1e6,
@@ -64,7 +64,7 @@ class GaussianBlurWithNoiseEmpiricalMapLazeReconstruction(AbstractExample):
             AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / np.sqrt(gbNormalizer.GetSpectralRadiusGramMatrixRowsH()),
             AbstractEmgaussReconstructor.INPUT_KEY_ESTIMATE_HYPERPARAMETERS_ITERATIONS_INTERVAL: 500
         }
-        clsReconstructor = GaussianBlurWithNoiseEmpiricalMapLazeReconstruction._concreteMapReconstructor[self.estimatorDesc]
+        clsReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample._concreteMapReconstructor[self.estimatorDesc]
         if self.estimatorDesc == 'map2':
             # The MAP2 LAZE reconstructor ctor accepts  accepts optimSettingsDict and r
             assert self.r is not None
@@ -118,7 +118,7 @@ class GaussianBlurWithNoiseEmpiricalMapLazeReconstruction(AbstractExample):
         return self._y
 
 def RunMap1(snrDb):
-    exMap1 = GaussianBlurWithNoiseEmpiricalMapLazeReconstruction('map1', snrDb=snrDb)
+    exMap1 = EmgaussEmpiricalMapLazeReconstructorOnExample('map1', snrDb=snrDb)
     exMap1.RunExample()
     m1EstimationErrorL2Norm = np.linalg.norm(exMap1.Theta - exMap1.ThetaEstimated, 2)
     return {
@@ -129,7 +129,7 @@ def RunMap1(snrDb):
 
 def RunMap2(param):
     [snrDb, gSup] = param
-    exMap2 = GaussianBlurWithNoiseEmpiricalMapLazeReconstruction('map2', snrDb=snrDb, r=0, gSup=gSup)
+    exMap2 = EmgaussEmpiricalMapLazeReconstructorOnExample('map2', snrDb=snrDb, r=0, gSup=gSup)
     exMap2.RunExample()
     m2EstimationErrorL2Norm = np.linalg.norm(exMap2.Theta - exMap2.ThetaEstimated, 2)
     return {

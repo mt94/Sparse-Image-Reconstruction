@@ -5,11 +5,11 @@ from Example import AbstractExample
 from Sim.Blur import Blur
 from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory 
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
-from Recon.PsfNormalizer import PsfNormalizer
+from Recon.PsfNormalizer import PsfMatrixNormNormalizer
 
 class GaussianBlurWithNoise(AbstractExample):   
     def __init__(self, noiseSigma=None, snrDb=None):
-        super(GaussianBlurWithNoise, self).__init__('Gaussian Blur with additive Gaussian noise')
+        super(GaussianBlurWithNoise, self).__init__('Gaussian Blur with additive Gaussian noise example')
         self.blurredImageWithNoise = None
         self.channelChain = None        
         self.noiseSigma = noiseSigma
@@ -62,17 +62,17 @@ class GaussianBlurWithNoise(AbstractExample):
                     
         """ Calculate the spectral radius of H*H^T. Must do this after running the chain,
             since gb.blurPsf is only created when the Blur channel block gets called. This
-            isn't an issue since PsfNormalizer is intended to be used in reconstruction,
+            isn't an issue since PsfMatrixNormNormalizer is intended to be used in reconstruction,
             hence another processing chain.
         """
-        gbNormalizer = PsfNormalizer(1)
-        gbNormalizer.NormalizePsf(gb.BlurPsfInThetaFrame)
+        gbNormalizer = PsfMatrixNormNormalizer(1)
+        gbNormalizer.NormalizeLinearOperator(gb.BlurPsfInThetaFrame)
 #        print 'Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
                 
         
     
 if __name__ == "__main__":    
-    ex = GaussianBlurWithNoise(snrDb=2)
+    ex = GaussianBlurWithNoise(snrDb=20)
     ex.RunExample()
     # In order to remove the shift, must access the Blur block in the channel chain
     blurredImageWithNoiseForDisplay = ex.channelChain \
