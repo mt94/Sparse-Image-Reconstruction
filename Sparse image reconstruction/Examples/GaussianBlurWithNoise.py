@@ -66,7 +66,7 @@ class GaussianBlurWithNoise(AbstractExample):
             hence another processing chain.
         """
         gbNormalizer = PsfMatrixNormNormalizer(1)
-        gbNormalizer.NormalizeLinearOperator(gb.BlurPsfInThetaFrame)
+        gbNormalizer.NormalizePsf(gb.BlurPsfInThetaFrame)
 #        print 'Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
                 
         

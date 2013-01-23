@@ -8,7 +8,7 @@ class AbstractPsfNormalizer(chb.AbstractChannelBlock):
         self.psfScalar = None
         
     @abc.abstractmethod
-    def NormalizeLinearOperator(self, H):
+    def NormalizePsf(self, H):
         pass
     
     def NormalizeTheta(self, theta):
@@ -30,7 +30,7 @@ class PsfMatrixNormNormalizer(AbstractPsfNormalizer):
         self.psfColumnNormL2 = None        
         
     """ Abstract method implementation. Returns a normalized psf. """
-    def NormalizeLinearOperator(self, H):
+    def NormalizePsf(self, H):
         if len(H.shape) == 2:            
             HFft = np.fft.fft2(H)            
         else:             
@@ -59,7 +59,7 @@ class PsfColumnNormNormalizer(AbstractPsfNormalizer):
         self.psfColumnNormL2 = None            
 
     """ Abstract method implementation. Returns a normalized psf. """
-    def NormalizeLinearOperator(self, H):
+    def NormalizePsf(self, H):
         if len(H.shape) == 2:    
             fnFft = np.fft.fft2
             fnFftInverse = np.fft.ifft2                              

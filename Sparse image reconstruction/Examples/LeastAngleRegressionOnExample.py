@@ -21,18 +21,18 @@ class LeastAngleRegressionOnExample(AbstractExample):
         self.gbwn.RunExample()
                 
         y = self.gbwn.blurredImageWithNoise
-        H = self.gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame
+        psfRepH = self.gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
         
         gbNormalizer = PsfColumnNormNormalizer(1)
-        HWithUnitColumnNorm = gbNormalizer.NormalizeLinearOperator(H)
+        psfRepHWithUnitColumnNorm = gbNormalizer.NormalizePsf(psfRepH)
         
         optimSettingsDict = { LeastAngleRegressionReconstructor.INPUT_KEY_MAX_ITERATIONS: 7,
                               LeastAngleRegressionReconstructor.INPUT_KEY_EPS: np.spacing(1),
                               LeastAngleRegressionReconstructor.INPUT_KEY_NVERBOSE: 1
                              }
         reconstructor = LeastAngleRegressionReconstructor(optimSettingsDict)
-        self.reconResult = reconstructor.Estimate(y, HWithUnitColumnNorm)
-#        self.reconResult = reconstructor.Estimate(y, H)
+        self.reconResult = reconstructor.Estimate(y, psfRepHWithUnitColumnNorm)
+#        self.reconResult = reconstructor.Estimate(y, psfRepH)
         
 if __name__ == "__main__":
     ex = LeastAngleRegressionOnExample()

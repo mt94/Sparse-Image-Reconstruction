@@ -46,7 +46,7 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
         
         # Get variables of interest from the gbwn object
         y = gbwn.blurredImageWithNoise
-        H = gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame
+        psfRepH = gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
         if (self.noiseSigma is None):
             self.noiseSigma = gbwn.noiseSigma
         
@@ -55,7 +55,7 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_TOL: 1e-7                                                
                                                            })        
         gbNormalizer = PsfMatrixNormNormalizer(1)
-        gbNormalizer.NormalizeLinearOperator(H)        
+        gbNormalizer.NormalizePsf(psfRepH)        
         optimSettingsDict = \
         {
             AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 1e6,
@@ -75,9 +75,9 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
             reconstructor = clsReconstructor(optimSettingsDict)
                     
         self._thetaEstimated = reconstructor.Estimate(y,
-                                                      H,
+                                                      psfRepH,
                                                       InitialEstimatorFactory.GetInitialEstimator('Hty')
-                                                                             .GetInitialEstimate(y, H) 
+                                                                             .GetInitialEstimate(y, psfRepH) 
                                                       )
                                             
         # Save results
