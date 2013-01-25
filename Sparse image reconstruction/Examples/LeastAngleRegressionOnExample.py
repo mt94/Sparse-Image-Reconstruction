@@ -1,10 +1,10 @@
 import numpy as np
 import pylab as plt
 
-from Example import AbstractExample
-from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
-from Recon.PsfNormalizer import PsfColumnNormNormalizer
+from AbstractExample import AbstractExample
+from GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Stagewise.LeastAngleRegressionReconstructor import LeastAngleRegressionReconstructor
+from Systems.PsfNormalizer import PsfColumnNormNormalizer
 
 class LeastAngleRegressionOnExample(AbstractExample):
     def __init__(self, snrDb=None):

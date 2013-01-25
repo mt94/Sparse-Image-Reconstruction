@@ -1,7 +1,8 @@
 import numpy as np
 import warnings
 
-from Recon.Reconstructor import AbstractReconstructor
+from Recon.AbstractReconstructor import AbstractReconstructor
+from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class LeastAngleRegressionReconstructor(AbstractReconstructor):
     
@@ -106,7 +107,7 @@ class LeastAngleRegressionReconstructor(AbstractReconstructor):
                  'activeSetComplement': activeSetComplement
                 }
                         
-    def Iterate(self, y, H):
+    def Iterate(self, y, psfRepH):
         maxIter = self._optimSettingsDict[LeastAngleRegressionReconstructor.INPUT_KEY_MAX_ITERATIONS] \
             if LeastAngleRegressionReconstructor.INPUT_KEY_MAX_ITERATIONS in self._optimSettingsDict \
             else 500
@@ -114,18 +115,11 @@ class LeastAngleRegressionReconstructor(AbstractReconstructor):
         nVerbose = self._optimSettingsDict[LeastAngleRegressionReconstructor.INPUT_KEY_NVERBOSE] \
             if LeastAngleRegressionReconstructor.INPUT_KEY_NVERBOSE in self._optimSettingsDict \
             else 0            
-                                
-        if len(H.shape) == 2:            
-            fnFft = np.fft.fft2
-            fnFftInverse = np.fft.ifft2  
-        else:             
-            fnFft = np.fft.fftn
-            fnFftInverse = np.fft.ifftn
 
-        HFft = fnFft(H)            
-
-        fnConvolveWithPsf = lambda x: fnFftInverse(np.multiply(HFft, fnFft(x))).real
-        fnConvolveWithPsfPrime = lambda x: fnFftInverse(np.multiply(HFft.conj(), fnFft(x))).real     
+        convMatrixObj = ConvolutionMatrixUsingPsf(psfRepH)    
+                                    
+        fnConvolveWithPsf = lambda x: convMatrixObj.Multiply(x)
+        fnConvolveWithPsfPrime = lambda x: convMatrixObj.MultiplyPrime(x)     
         
         HPrimey = fnConvolveWithPsfPrime(y)
                             
@@ -265,8 +259,8 @@ class LeastAngleRegressionReconstructor(AbstractReconstructor):
                  LeastAngleRegressionReconstructor.OUTPUT_KEY_MUHAT_ACTIVESET: muHatActiveSet.flatten()
                 }
                     
-    def Estimate(self, y, H, theta0=None):
-        return self.Iterate(y, H)
+    def Estimate(self, y, psfRepH, theta0=None):
+        return self.Iterate(y, psfRepH)
 
             
             

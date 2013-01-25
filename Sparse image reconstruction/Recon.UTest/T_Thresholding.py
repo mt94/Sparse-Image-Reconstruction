@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-import Recon.Gaussian.Thresholding as thr 
+import Systems.Thresholding as thr 
 
 class T_Thresholding(unittest.TestCase):    
     def testIdentity(self):

@@ -1,11 +1,11 @@
 import pylab as plt
 
 from Channel.ChannelProcessingChain import ChannelProcessingChain
-from Example import AbstractExample
+from AbstractExample import AbstractExample
 from Sim.Blur import Blur
 from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory 
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
-from Recon.PsfNormalizer import PsfMatrixNormNormalizer
+from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class GaussianBlurWithNoise(AbstractExample):   
     def __init__(self, noiseSigma=None, snrDb=None):

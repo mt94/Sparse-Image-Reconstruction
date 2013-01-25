@@ -1,13 +1,13 @@
 import numpy as np
 from multiprocessing import Pool
 
-from Example import AbstractExample
+from Examples.AbstractExample import AbstractExample
 from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 from Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
-from Recon.PsfNormalizer import PsfMatrixNormNormalizer
+from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
     
@@ -141,7 +141,7 @@ def RunMap2(param):
 if __name__ == "__main__":
     SNRDB = 20;
     GSUP = 1/np.sqrt(2)
-    pool = Pool(processes=4)
+    pool = Pool(processes=3)
     
 #    map1Result = RunMap1(SNRDB)
 #    print("MAP1: {0}, est. hyperparameter = {1}".format(map1Result['termination_reason'], map1Result['hyperparameter']))

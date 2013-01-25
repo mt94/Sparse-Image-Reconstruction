@@ -1,7 +1,8 @@
 import numpy as np
-import Recon.Reconstructor as Reconstructor
+from Recon.AbstractReconstructor import AbstractReconstructor
+from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
-class L2NormMinimizerReconstructor(Reconstructor.AbstractReconstructor):
+class L2NormMinimizerReconstructor(AbstractReconstructor):
             
     def __init__(self, constL2PenaltyOnTheta=None):
         super(L2NormMinimizerReconstructor, self).__init__()
@@ -10,24 +11,17 @@ class L2NormMinimizerReconstructor(Reconstructor.AbstractReconstructor):
         
     """ Abstract method override. Take H to be the matrix with which theta is
         convolved to get a noiseless version of y. """
-    def Estimate(self, y, H, theta0):
-        
-        if len(H.shape) == 2:            
-            fnFft = np.fft.fft2
-            fnFftInverse = np.fft.ifft2  
-        else:             
-            fnFft = np.fft.fftn
-            fnFftInverse = np.fft.ifftn
-                        
-        HFft = fnFft(np.array(H))            
-        yFft = fnFft(np.array(y))          
+    def Estimate(self, y, psfRepH, theta0):
+        fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(psfRepH)                                
+        psfFft = fftFunction['fft'](np.array(psfRepH))            
+        yFft = fftFunction['fft'](np.array(y))          
     
-        S = np.conjugate(HFft) * HFft
+        S = np.conjugate(psfFft) * psfFft
         if (self.constL2PenaltyOnTheta is not None):
             S = S + self.constL2PenaltyOnTheta * np.identity(S.shape[0])
                         
         #return fnFftInverse(np.linalg.solve(S, HFft.getH()*yFft)).real
-        return fnFftInverse((np.conjugate(HFft)*yFft)/S).real
+        return fftFunction['ifft']((np.conjugate(psfFft)*yFft)/S).real
             
         
             

@@ -1,6 +1,8 @@
 import abc
-import Channel.ChannelBlock as chb
 import numpy as np
+
+import Channel.ChannelBlock as chb
+from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class AbstractPsfNormalizer(chb.AbstractChannelBlock):
     def __init__(self, channelBlockType):
@@ -8,7 +10,7 @@ class AbstractPsfNormalizer(chb.AbstractChannelBlock):
         self.psfScalar = None
         
     @abc.abstractmethod
-    def NormalizePsf(self, H):
+    def NormalizePsf(self, psfRepH):
         pass
     
     def NormalizeTheta(self, theta):
@@ -17,7 +19,7 @@ class AbstractPsfNormalizer(chb.AbstractChannelBlock):
         else:
             assert self.psfScalar > 0
             return theta/self.psfScalar
-            
+                            
 """ Normalize the l_2 matrix norm of the psf convolution matrix """            
 class PsfMatrixNormNormalizer(AbstractPsfNormalizer):
        
@@ -30,14 +32,11 @@ class PsfMatrixNormNormalizer(AbstractPsfNormalizer):
         self.psfColumnNormL2 = None        
         
     """ Abstract method implementation. Returns a normalized psf. """
-    def NormalizePsf(self, H):
-        if len(H.shape) == 2:            
-            HFft = np.fft.fft2(H)            
-        else:             
-            HFft = np.fft.fftn(H)
-        self.psfColumnNormL2 = np.max(np.reshape(np.absolute(HFft), HFft.size))        
+    def NormalizePsf(self, psfRepH):
+        psfFft = ConvolutionMatrixUsingPsf.GetPsfFft(psfRepH)
+        self.psfColumnNormL2 = np.max(np.reshape(np.absolute(psfFft), psfFft.size))        
         self.psfScalar = self.psfColumnNormL2Desired/self.psfColumnNormL2        
-        return H*self.psfScalar
+        return psfRepH*self.psfScalar
             
     """ Compute the spectral radius of G(H) := H*H' """
     def GetSpectralRadiusGramMatrixRowsH(self):
@@ -59,15 +58,10 @@ class PsfColumnNormNormalizer(AbstractPsfNormalizer):
         self.psfColumnNormL2 = None            
 
     """ Abstract method implementation. Returns a normalized psf. """
-    def NormalizePsf(self, H):
-        if len(H.shape) == 2:    
-            fnFft = np.fft.fft2
-            fnFftInverse = np.fft.ifft2                              
-        else:      
-            fnFft = np.fft.fftn
-            fnFftInverse = np.fft.ifftn
-        HFft = fnFft(H)                               
-        x = np.zeros(H.shape)
+    def NormalizePsf(self, psfRepH):
+        fftFunc = ConvolutionMatrixUsingPsf.GetFftFunction(psfRepH)
+        psfFft = fftFunc['fft'](psfRepH)
+        x = np.zeros(psfRepH.shape)
         # XXX Unnecessary
 #        self.psfColumnNormL2 = np.zeros((H.size,))
 #        for flatInd in range(H.size):
@@ -76,11 +70,11 @@ class PsfColumnNormNormalizer(AbstractPsfNormalizer):
 #            x.flat[flatInd] = 1
 #            y = fnFftInverse(HFft*fnFft(x)).real
 #            self.psfColumnNormL2[flatInd] = np.sqrt((y*y).sum())
-        x.flat[0] = 1
-        y = fnFftInverse(HFft*fnFft(x)).real
+        x.flat[0] = 1        
+        y = fftFunc['ifft'](psfFft*fftFunc['fft'](x)).real
         self.psfColumnNormL2 = np.sqrt((y*y).sum())
         self.psfScalar = self.psfColumnNormL2Desired/self.psfColumnNormL2
-        return H*self.psfScalar
+        return psfRepH*self.psfScalar
 
 
     

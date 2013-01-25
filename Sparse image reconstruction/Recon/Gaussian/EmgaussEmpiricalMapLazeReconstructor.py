@@ -2,8 +2,8 @@ import numpy as np
 
 from Recon.AbstractEstimateHyperparameter import AbstractEstimateHyperparameter
 from Recon.AbstractDynamicThresholding import AbstractDynamicThresholding
-from Recon.Gaussian.Thresholding import ThresholdingHybrid, ThresholdingSoft
 from Recon.Gaussian.EmgaussEmpiricalMapReconstructor import EmgaussEmpiricalMapReconstructor
+from Systems.Thresholding import ThresholdingHybrid, ThresholdingSoft
 
 class LazeMap1EstimateHyperparameter(AbstractEstimateHyperparameter):
     def __init__(self):

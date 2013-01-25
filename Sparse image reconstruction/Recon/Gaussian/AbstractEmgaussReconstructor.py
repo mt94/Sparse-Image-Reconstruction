@@ -1,8 +1,9 @@
 import abc
 import numpy as np
 
-from IterationsObserver import AbstractIterationsObserver
-from Recon.Reconstructor import AbstractReconstructor
+from Recon.AbstractIterationsObserver import AbstractIterationsObserver
+from Recon.AbstractReconstructor import AbstractReconstructor
+from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class AbstractEmgaussReconstructor(AbstractReconstructor):
     
@@ -31,12 +32,14 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
     def Mstep(self, x, numIter):
         pass
         
-    """ y, H, and theta0 are NumPy matrices of the same shape. H is treated as as the 
-        matrix with which theta is convolved (for a noiseless version of y). Don't make
-        an assumption on the l_2 norm of H. If the caller wants to normalize H s.t. it
-        has unit l_2 norm, then it has to be done before calling this method. 
+    """ y, psfRepH, and theta0 are NumPy matrices of the same shape. Don't make
+        an assumption on the l_2 norm of H, the convolution matrix of psfRepH. 
+        If the caller wants to normalize H s.t. it has unit l_2 norm, then it has
+        to be done before calling this method. 
     """
-    def EstimateUsingFft(self, y, H, theta0):                                            
+    def EstimateUsingFft(self, y, psfRepH, theta0):
+        assert (y.shape == psfRepH.shape) and (y.shape == theta0.shape)
+                                                    
         # Get the starting point theta0
         self._thetaN = theta0
         
@@ -47,15 +50,10 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
             if AbstractEmgaussReconstructor.INPUT_KEY_TAU in self._optimSettingsDict \
             else 1
         
-        if len(H.shape) == 2:            
-            fnFft = np.fft.fft2
-            fnFftInverse = np.fft.ifft2  
-        else:             
-            fnFft = np.fft.fftn
-            fnFftInverse = np.fft.ifftn
+        fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(psfRepH)
                         
-        HFft = fnFft(H)            
-        yFft = fnFft(y)        
+        HFft = fftFunction['fft'](psfRepH)            
+        yFft = fftFunction['fft'](y)        
         
         # Get the IterationsObserver object
         assert AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict   
@@ -65,7 +63,7 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         if iterObserver.RequireFitError == False:
             fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN)
         else:
-            fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, fnFftInverse(feN).real)
+            fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, fftFunction['ifft'](feN).real)
 
         # Do any initialization
         self.SetupBeforeIterations()
@@ -73,8 +71,8 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         # Run through the EM iterations
         numIter = 0;
         while numIter < maxIter:
-            fitErrorNFft = yFft - np.multiply(HFft, fnFft(self._thetaN))
-            correction = fnFftInverse(np.multiply(HFft.conj(), fitErrorNFft)).real
+            fitErrorNFft = yFft - np.multiply(HFft, fftFunction['fft'](self._thetaN))
+            correction = fftFunction['ifft'](np.multiply(HFft.conj(), fitErrorNFft)).real
             thetaNp1 = self.Mstep(self._thetaN + tau * correction, numIter)        
             if fnCallIterObserver(thetaNp1, self._thetaN, fitErrorNFft):                
                 self._terminationReason = 'Iterations observer, terminating after ' + str(numIter) + ' iterations'
@@ -88,9 +86,9 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         return self._thetaN
        
     # Abstract method override
-    def Estimate(self, y, H, theta0):
+    def Estimate(self, y, psfRepH, theta0):
         # Only support the FFT method for now
-        return self.EstimateUsingFft(y, H, theta0)
+        return self.EstimateUsingFft(y, psfRepH, theta0)
         
         
         

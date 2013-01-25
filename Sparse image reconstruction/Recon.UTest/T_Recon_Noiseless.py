@@ -9,11 +9,11 @@ from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstru
 from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.Gaussian.Thresholding import ThresholdingIdentity
-from Recon.NormMinimizer.L2NormMinimizer import L2NormMinimizer
-from Recon.PsfNormalizer import PsfNormalizer
+from Recon.NormMinimizer.L2NormMinimizer import L2NormMinimizerReconstructor
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 #from Sim.Blur import Blur
 #from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory
+from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class T_Recon_Noiseless(unittest.TestCase):
     
@@ -27,7 +27,7 @@ class T_Recon_Noiseless(unittest.TestCase):
         
     def testLandweberIterations(self):        
         # Set up Landweber iterations
-        gbNormalizer = PsfNormalizer(1)
+        gbNormalizer = PsfMatrixNormNormalizer(1)
         gbNormalizer.NormalizePsf(self.channelChain.channelBlocks[1].BlurPsfInThetaFrame)
         tIdentity = ThresholdingIdentity()
         emgIterationsObserver = EmgaussIterationsObserver({
@@ -73,7 +73,7 @@ class T_Recon_Noiseless(unittest.TestCase):
 #        plt.colorbar()        
                 
     def testDeconvolution(self):
-        deconv = L2NormMinimizer(0)
+        deconv = L2NormMinimizerReconstructor(0)
         thetaEstimated = deconv.Estimate(self.blurredImage,
                                          self.channelChain.channelBlocks[1].BlurPsfInThetaFrame, 
                                          None)
