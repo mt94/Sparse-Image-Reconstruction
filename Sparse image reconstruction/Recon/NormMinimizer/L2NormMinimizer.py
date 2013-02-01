@@ -2,15 +2,15 @@ import numpy as np
 from Recon.AbstractReconstructor import AbstractReconstructor
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
-class L2NormMinimizerReconstructor(AbstractReconstructor):
+""" Implement the explicit (non-iterative) solution. Requires the psf. """
+class L2NormDirectMinimizerReconstructor(AbstractReconstructor):
             
     def __init__(self, constL2PenaltyOnTheta=None):
-        super(L2NormMinimizerReconstructor, self).__init__()
+        super(L2NormDirectMinimizerReconstructor, self).__init__()
         assert constL2PenaltyOnTheta >= 0
         self.constL2PenaltyOnTheta = constL2PenaltyOnTheta
         
-    """ Abstract method override. Take H to be the matrix with which theta is
-        convolved to get a noiseless version of y. """
+    """ Abstract method override """         
     def Estimate(self, y, psfRepH, theta0):
         fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(psfRepH)                                
         psfFft = fftFunction['fft'](np.array(psfRepH))            

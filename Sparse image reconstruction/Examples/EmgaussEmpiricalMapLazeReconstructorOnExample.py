@@ -7,6 +7,7 @@ from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstru
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 from Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
+from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
@@ -37,9 +38,9 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
         
     def RunExample(self): 
         if (self.noiseSigma is not None) and (self.noiseSigma >= 0):       
-            gbwn = GaussianBlurWithNoise(noiseSigma=self.noiseSigma)
+            gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: self.noiseSigma})
         elif (self.snrDb is not None):
-            gbwn = GaussianBlurWithNoise(snrDb=self.snrDb)
+            gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_SNR_DB: self.snrDb})
         else:
             raise NameError('noiseSigma or snrDb must be set')  
         gbwn.RunExample()
@@ -48,7 +49,7 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
         y = gbwn.blurredImageWithNoise
         psfRepH = gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
         if (self.noiseSigma is None):
-            self.noiseSigma = gbwn.noiseSigma
+            self.noiseSigma = gbwn.NoiseSigma
         
         emgIterationsObserver = EmgaussIterationsObserver({
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_COND: EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2,
@@ -75,7 +76,7 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
             reconstructor = clsReconstructor(optimSettingsDict)
                     
         self._thetaEstimated = reconstructor.Estimate(y,
-                                                      psfRepH,
+                                                      ConvolutionMatrixUsingPsf(psfRepH),
                                                       InitialEstimatorFactory.GetInitialEstimator('Hty')
                                                                              .GetInitialEstimate(y, psfRepH) 
                                                       )

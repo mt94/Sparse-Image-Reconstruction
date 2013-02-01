@@ -6,6 +6,10 @@ class AbstractConvolutionMatrix(object):
     def __init__(self):
         super(AbstractConvolutionMatrix, self).__init__()
         
+    @abc.abstractproperty
+    def PsfShape(self):
+        raise NotImplementedError('No default abstract method implemented')
+                    
     @abc.abstractmethod
     def Multiply(self, theta):
         raise NotImplementedError('No default abstract method implemented')

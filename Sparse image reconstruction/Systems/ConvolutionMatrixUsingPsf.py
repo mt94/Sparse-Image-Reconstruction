@@ -18,17 +18,24 @@ class ConvolutionMatrixUsingPsf(Systems.AbstractConvolutionMatrix.AbstractConvol
             return np.fft.fftn(psfRepConvMatrix)
         
     @staticmethod
-    def GetFftFunction(psfRepConvMatrix):
-        assert len(psfRepConvMatrix.shape) >= 2
-        if len(psfRepConvMatrix.shape) == 2:
+    def GetFftFunction(psfArg):
+        if (isinstance(psfArg, np.ndarray)):
+            psfShape = psfArg.shape            
+        elif (isinstance(psfArg, tuple)):
+            psfShape = psfArg
+        else:
+            raise TypeError('Cannot get psf shape from psfArg')
+        psfShapeLen = len(psfShape)
+        assert psfShapeLen >= 2            
+        if psfShapeLen == 2:
             return { 'fft': np.fft.fft2, 'ifft': np.fft.ifft2 }
         else:
             return { 'fft': np.fft.fftn, 'ifft': np.fft.ifftn }
-                                
+                                                                
     def CalculateMeanAndL2norm(self):
         singlePoint = np.zeros(self._psfFft.shape)
         np.put(singlePoint, 1, 1)
-        singlePsf = self.Convolve(singlePoint)
+        singlePsf = self.Multiply(singlePoint)
         convMatrixColumnMean = np.mean(np.reshape(singlePsf, (singlePsf.size,1)))
         columnWithMeanSubtracted = np.array(np.reshape(singlePsf - convMatrixColumnMean*np.ones(singlePsf.shape), (singlePsf.size,1)))    
         convMatrixColumnZeroMeanedL2norm = np.sqrt(np.sum(columnWithMeanSubtracted * columnWithMeanSubtracted))
@@ -37,7 +44,11 @@ class ConvolutionMatrixUsingPsf(Systems.AbstractConvolutionMatrix.AbstractConvol
                 }
 
     """ Implement abstract methods """
-            
+    
+    @property
+    def PsfShape(self):
+        return self._psfFft.shape
+                
     """ Convolution with the psf, so calculate y = Hx = h * x """        
     def Multiply(self, x):
         assert isinstance(x, np.ndarray)

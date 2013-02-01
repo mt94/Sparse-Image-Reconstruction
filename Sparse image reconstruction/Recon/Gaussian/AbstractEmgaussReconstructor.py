@@ -1,9 +1,10 @@
 import abc
-import numpy as np
+#import numpy as np
 
 from Recon.AbstractIterationsObserver import AbstractIterationsObserver
 from Recon.AbstractReconstructor import AbstractReconstructor
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
+#from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class AbstractEmgaussReconstructor(AbstractReconstructor):
     
@@ -32,13 +33,11 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
     def Mstep(self, x, numIter):
         pass
         
-    """ y, psfRepH, and theta0 are NumPy matrices of the same shape. Don't make
-        an assumption on the l_2 norm of H, the convolution matrix of psfRepH. 
-        If the caller wants to normalize H s.t. it has unit l_2 norm, then it has
-        to be done before calling this method. 
-    """
-    def EstimateUsingFft(self, y, psfRepH, theta0):
-        assert (y.shape == psfRepH.shape) and (y.shape == theta0.shape)
+    """ y and theta0 are NumPy matrices of the same shape. """
+    def EstimateUsingFft(self, y, convMatrixObj, theta0):
+#        assert (y.shape == psfRepH.shape) and (y.shape == theta0.shape)
+        assert isinstance(convMatrixObj, AbstractConvolutionMatrix)
+        assert (y.shape == convMatrixObj.PsfShape) and (y.shape == theta0.shape)        
                                                     
         # Get the starting point theta0
         self._thetaN = theta0
@@ -49,11 +48,10 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         tau = self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_TAU] \
             if AbstractEmgaussReconstructor.INPUT_KEY_TAU in self._optimSettingsDict \
             else 1
-        
-        fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(psfRepH)
-                        
-        HFft = fftFunction['fft'](psfRepH)            
-        yFft = fftFunction['fft'](y)        
+                
+#        fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(convMatrixObj.PsfShape)                        
+#        psfFft = fftFunction['fft'](psfRepH)            
+#        yFft = fftFunction['fft'](y)        
         
         # Get the IterationsObserver object
         assert AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict   
@@ -63,7 +61,8 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         if iterObserver.RequireFitError == False:
             fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN)
         else:
-            fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, fftFunction['ifft'](feN).real)
+            #fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, fftFunction['ifft'](feN).real)
+            fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, feN)
 
         # Do any initialization
         self.SetupBeforeIterations()
@@ -71,10 +70,12 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         # Run through the EM iterations
         numIter = 0;
         while numIter < maxIter:
-            fitErrorNFft = yFft - np.multiply(HFft, fftFunction['fft'](self._thetaN))
-            correction = fftFunction['ifft'](np.multiply(HFft.conj(), fitErrorNFft)).real
+#            fitErrorNFft = yFft - np.multiply(psfFft, fftFunction['fft'](self._thetaN))
+#            correction = fftFunction['ifft'](np.multiply(psfFft.conj(), fitErrorNFft)).real
+            fitErrorN = y - convMatrixObj.Multiply(self._thetaN)
+            correction = convMatrixObj.MultiplyPrime(fitErrorN)
             thetaNp1 = self.Mstep(self._thetaN + tau * correction, numIter)        
-            if fnCallIterObserver(thetaNp1, self._thetaN, fitErrorNFft):                
+            if fnCallIterObserver(thetaNp1, self._thetaN, fitErrorN):                
                 self._terminationReason = 'Iterations observer, terminating after ' + str(numIter) + ' iterations'
                 break
             numIter += 1

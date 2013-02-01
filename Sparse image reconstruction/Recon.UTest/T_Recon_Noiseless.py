@@ -9,10 +9,11 @@ from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstru
 from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.Gaussian.Thresholding import ThresholdingIdentity
-from Recon.NormMinimizer.L2NormMinimizer import L2NormMinimizerReconstructor
+from Recon.NormMinimizer.L2NormMinimizer import L2NormDirectMinimizerReconstructor
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 #from Sim.Blur import Blur
 #from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory
+from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class T_Recon_Noiseless(unittest.TestCase):
@@ -20,7 +21,7 @@ class T_Recon_Noiseless(unittest.TestCase):
     testMessages = []
     
     def setUp(self):
-        ex = GaussianBlurWithNoise(0)
+        ex = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: 0})
         ex.RunExample()
         self.channelChain = ex.channelChain        
         self.blurredImage = ex.blurredImageWithNoise # Since we specified a sigma of 0, the image is noiseless
@@ -46,11 +47,11 @@ class T_Recon_Noiseless(unittest.TestCase):
         # Run the Landweber iterations and verify that it recovers the original image exactly.
         # This is possible since there's no noise.
         y = self.blurredImage
-        H = self.channelChain.channelBlocks[1].BlurPsfInThetaFrame
+        psfRepH = self.channelChain.channelBlocks[1].BlurPsfInThetaFrame
         thetaEstimated = emg.Estimate(y, 
-                                      H,
+                                      ConvolutionMatrixUsingPsf(psfRepH),
                                       InitialEstimatorFactory.GetInitialEstimator('Hty')
-                                                             .GetInitialEstimate(y, H)                                       
+                                                             .GetInitialEstimate(y, psfRepH)                                       
                                       )            
         T_Recon_Noiseless.testMessages.append("Landweber iterations: termination reason: " + emg.TerminationReason)
         
@@ -73,7 +74,7 @@ class T_Recon_Noiseless(unittest.TestCase):
 #        plt.colorbar()        
                 
     def testDeconvolution(self):
-        deconv = L2NormMinimizerReconstructor(0)
+        deconv = L2NormDirectMinimizerReconstructor(0)
         thetaEstimated = deconv.Estimate(self.blurredImage,
                                          self.channelChain.channelBlocks[1].BlurPsfInThetaFrame, 
                                          None)
