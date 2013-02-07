@@ -20,15 +20,21 @@ class EmgaussIterationsObserver(AbstractIterationsObserver):
             self.terminateTolerance = inputDict[EmgaussIterationsObserver.INPUT_KEY_TERMINATE_TOL]
         else:
             self.terminateTolerance = EmgaussIterationsObserver.TERMINATE_TOL_DEFAULT
-        
+            
+        self._bTerminate = False
+
+    @property
+    def TerminateIterations(self):
+        return self._bTerminate
+            
     # Abstract method override
-    def CheckTerminateCondition(self, thetaNp1, thetaN, fitErrorN=None):
+    def UpdateObservations(self, thetaNp1, thetaN, fitErrorN=None):
         if (self.terminateCondition == EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2):
 #            if (np.linalg.norm(thetaNp1 - thetaN, 2) < self.terminateTolerance):
             thetaDiff = np.reshape(thetaNp1 - thetaN, (thetaN.size,))            
             if np.sqrt((thetaDiff*thetaDiff).sum()) < self.terminateTolerance:                
-                return True
+                self._bTerminate = True
             else:
-                return False
+                self._bTerminate = False
         else:
             raise NotImplementedError('Unrecognized termination condition')

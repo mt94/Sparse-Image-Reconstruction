@@ -4,22 +4,22 @@ import pylab as plt
 
 from AbstractExample import AbstractExample
 from GaussianBlurWithNoise import GaussianBlurWithNoise
-from Recon.Stagewise.LarsReconstructor import LarsReconstructor
+from Recon.Stagewise.LarsConstants import LarsConstants
+from Recon.Stagewise.LarsReconstructorFactory import LarsReconstructorFactory
 from Systems.ComputeEnvironment import ComputeEnvironment
-#from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf 
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
-#from Systems.PsfNormalizer import PsfColumnNormNormalizer
 
 class LarsReconstructorOnExample(AbstractExample):
     
     GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\Users\Mike\LeastAngleRegressionOnExampleGbwn.dump'
     
-    def __init__(self, snrDb=None, bRestoreSim=False):
+    def __init__(self, reconstructorDesc, snrDb=None, bRestoreSim=False):
         super(LarsReconstructorOnExample, self).__init__('LARS example')
+        self.reconstructorDesc = reconstructorDesc
         self.snrDb = snrDb
-        self.reconResult = None
-        self.gbwn = None
         self.bRestoreSim = bRestoreSim
+        self.reconResult = None
+        self.gbwn = None        
         
     def RunExample(self):
         
@@ -38,11 +38,13 @@ class LarsReconstructorOnExample(AbstractExample):
         y = self.gbwn.blurredImageWithNoise
         psfRepH = self.gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
         
-        optimSettingsDict = { LarsReconstructor.INPUT_KEY_MAX_ITERATIONS: 10,
-                              LarsReconstructor.INPUT_KEY_EPS: ComputeEnvironment.EPS,
-                              LarsReconstructor.INPUT_KEY_NVERBOSE: 1
+        optimSettingsDict = { 
+                              LarsConstants.INPUT_KEY_MAX_ITERATIONS: 10,
+                              LarsConstants.INPUT_KEY_EPS: ComputeEnvironment.EPS,
+                              LarsConstants.INPUT_KEY_NVERBOSE: 1,
+                              LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN: True
                              }
-        reconstructor = LarsReconstructor(optimSettingsDict)
+        reconstructor = LarsReconstructorFactory.GetReconstructor(self.reconstructorDesc, optimSettingsDict)
         
 #        gbNormalizer = PsfColumnNormNormalizer(1)
 #        psfRepHWithUnitColumnNorm = gbNormalizer.NormalizePsf(psfRepH)                
@@ -53,14 +55,18 @@ class LarsReconstructorOnExample(AbstractExample):
         self.reconResult = reconstructor.Estimate(yZeroMean, ConvolutionMatrixZeroMeanUnitNormDerivative(psfRepH))
         
 if __name__ == "__main__":
-    ex = LarsReconstructorOnExample(bRestoreSim=True) # Use bRestoreSim for debugging problem cases
+    
+    ex = LarsReconstructorOnExample('lars_lasso', snrDb=40, bRestoreSim=False) # Use bRestoreSim for debugging problem cases
     ex.RunExample()
     
-    activeSetDisplay = ["{0}".format(x) for x in ex.reconResult[LarsReconstructor.OUTPUT_KEY_ACTIVESET]]
+    activeSetDisplay = ["{0}".format(x) for x in ex.reconResult[LarsConstants.OUTPUT_KEY_ACTIVESET]]
     print("Active set: {0}".format(" ".join(activeSetDisplay)))
     
-    corrHatHistoryDisplay = ["{0:.5f}".format(x) for x in ex.reconResult[LarsReconstructor.OUTPUT_KEY_MAX_CORRHAT_HISTORY]]
+    corrHatHistoryDisplay = ["{0:.5f}".format(x) for x in ex.reconResult[LarsConstants.OUTPUT_KEY_MAX_CORRHAT_HISTORY]]
     print("Max corr: {0}".format(" ".join(corrHatHistoryDisplay)))
+    
+    if LarsConstants.OUTPUT_KEY_SIGN_VIOLATION_NUMITER in ex.reconResult:
+        print("Number of Lars-Lasso iteration(s) with a sign violation: {0}".format(ex.reconResult[LarsConstants.OUTPUT_KEY_SIGN_VIOLATION_NUMITER]))
 
     # In order to remove the shift, must access the Blur block in the channel chain
     blurredImageWithNoiseForDisplay = ex.gbwn.channelChain \
@@ -75,7 +81,7 @@ if __name__ == "__main__":
     plt.imshow(blurredImageWithNoiseForDisplayZeroMean)
     plt.colorbar()
     
-    estimatedMu = np.reshape(ex.reconResult[LarsReconstructor.OUTPUT_KEY_MUHAT_ACTIVESET], 
+    estimatedMu = np.reshape(ex.reconResult[LarsConstants.OUTPUT_KEY_MUHAT_ACTIVESET], 
                              ex.gbwn.blurredImageWithNoise.shape)
     estimatedMuForDisplay = ex.gbwn.channelChain \
                                    .channelBlocks[1] \

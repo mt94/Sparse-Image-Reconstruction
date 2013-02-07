@@ -1,25 +1,18 @@
 import numpy as np
 import warnings
 
+from LarsConstants import LarsConstants
 from Recon.AbstractReconstructor import AbstractReconstructor
 from Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
 #from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class LarsReconstructor(AbstractReconstructor):
     
-    INPUT_KEY_MAX_ITERATIONS = 'max_iters'
-    INPUT_KEY_EPS = 'eps'
-    INPUT_KEY_NVERBOSE = 'nverbose'
-        
-    OUTPUT_KEY_ACTIVESET = 'activeset'
-    OUTPUT_KEY_MAX_CORRHAT_HISTORY = 'max_corrhat_history'    
-    OUTPUT_KEY_MUHAT_ACTIVESET = 'muhat_activeset'
-    
     def __init__(self, optimSettingsDict=None):   
         super(LarsReconstructor, self).__init__()                
         
-        self.EPS = optimSettingsDict[LarsReconstructor.INPUT_KEY_EPS] \
-            if LarsReconstructor.INPUT_KEY_EPS in optimSettingsDict \
+        self.EPS = optimSettingsDict[LarsConstants.INPUT_KEY_EPS] \
+            if LarsConstants.INPUT_KEY_EPS in optimSettingsDict \
             else 1.0e-7
                     
         self._optimSettingsDict = optimSettingsDict            
@@ -27,7 +20,7 @@ class LarsReconstructor(AbstractReconstructor):
     """ Calculate AActiveSet and uActiveSet using XActiveSet via (2.5) and (2.6). Assume that 
         XActiveSet is a matrix. uActiveSet is the equiangular vector. """
     @staticmethod    
-    def _CalculateAU(XActiveSet):
+    def _CalculateActiveSetVariables(XActiveSet):
         assert isinstance(XActiveSet, np.matrix)
         activeSetSize = XActiveSet.shape[1]
         GActiveSet = XActiveSet.T * XActiveSet
@@ -39,7 +32,7 @@ class LarsReconstructor(AbstractReconstructor):
         uActiveSetAsArraySquaredNorm = np.sum(uActiveSetAsArray*uActiveSetAsArray)
         assert np.allclose(uActiveSetAsArraySquaredNorm, 1)                       
         assert np.allclose(np.array(XActiveSet.T*uActiveSet), AActiveSet*np.ones((activeSetSize,1))) 
-        return { 'A': AActiveSet, 'u': uActiveSet }
+        return { 'A': AActiveSet, 'u': uActiveSet, 'w': wActiveSet }
 
     @staticmethod
     def _CalculateNewJoinIndex(corrHatAbsMax, cj, AActiveSet, aj, activeSetComplement, EPS):
@@ -166,32 +159,29 @@ class LarsReconstructor(AbstractReconstructor):
                           'indHat': str(indHatInt), 'calcPair': str(calcPair), 'corrHatNextAbsMismatch': str(corrHatNextAbsMismatch),
                           'cj': str(joinResultDict['cj'][indHatInt]), 'aj': str(joinResultDict['aj'][indHatInt])
                          }
-            print(' '.join([key + '=' + outputDict[key] for key in outputDict]))
+            debugMsg = ' '.join([key + '=' + outputDict[key] for key in outputDict])
             
 #        return acceptableJoinIndex
 #        raise RuntimeError('Abort')
 #        return joinResultDict['indHat']
-        return np.array(indHatIntList)
-                                
-    def Iterate(self, y, convMatrixObj):
-        maxIter = self._optimSettingsDict[LarsReconstructor.INPUT_KEY_MAX_ITERATIONS] \
-            if LarsReconstructor.INPUT_KEY_MAX_ITERATIONS in self._optimSettingsDict \
+        return np.array(indHatIntList), debugMsg
+
+    def _GetVariablesForIteration(self, y, fnConvolveWithPsfPrime):
+        maxIter = self._optimSettingsDict[LarsConstants.INPUT_KEY_MAX_ITERATIONS] \
+            if LarsConstants.INPUT_KEY_MAX_ITERATIONS in self._optimSettingsDict \
             else 500
             
-        nVerbose = self._optimSettingsDict[LarsReconstructor.INPUT_KEY_NVERBOSE] \
-            if LarsReconstructor.INPUT_KEY_NVERBOSE in self._optimSettingsDict \
+        nVerbose = self._optimSettingsDict[LarsConstants.INPUT_KEY_NVERBOSE] \
+            if LarsConstants.INPUT_KEY_NVERBOSE in self._optimSettingsDict \
             else 0            
+            
+        bEnforceOneatatimeJoin = self._optimSettingsDict[LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN] \
+            if LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN in self._optimSettingsDict \
+            else False
 
-#        convMatrixObj = ConvolutionMatrixUsingPsf(psfRepH)    
-        assert isinstance(convMatrixObj, AbstractConvolutionMatrix)
-                                    
-        fnConvolveWithPsf = lambda x: convMatrixObj.Multiply(x)
-        fnConvolveWithPsfPrime = lambda x: convMatrixObj.MultiplyPrime(x)     
-        
-        HPrimey = fnConvolveWithPsfPrime(y)
-        
+        HPrimey = fnConvolveWithPsfPrime(y)        
         fnComputeCorrHat = lambda x: HPrimey - fnConvolveWithPsfPrime(np.reshape(x, y.shape)) # 2.8
-                            
+
         # Initialize            
         corrHatAbsMax = np.max(HPrimey.flat) # Start out with mu_0 = 0
         activeSet = np.where(HPrimey.flat == corrHatAbsMax)[0]
@@ -200,13 +190,22 @@ class LarsReconstructor(AbstractReconstructor):
         
         activeSetComplement = np.setdiff1d(np.arange(y.size), activeSet)
         assert activeSetComplement.size == (y.size - 1)
-        
+                
+        return maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement
+                                            
+    def Iterate(self, y, fnConvolveWithPsf, fnConvolveWithPsfPrime):
+                                            
+        maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement = self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
+                                                                                
         muHatActiveSet = np.matrix(np.zeros((y.size, 1)))
+        
         XActiveSetColumns = []       
-        corrHatAbsMaxActualHistory = []         
+        corrHatAbsMaxActualHistory = []                
         activeSetResult = None
         joinResult = None
-        lastIndexToJoinActiveSet = None
+        
+        assert activeSet.size == 1                                
+        lastIndexToJoinActiveSet = np.array([activeSet[0]])        
         
         numIter = 0
         
@@ -236,7 +235,6 @@ class LarsReconstructor(AbstractReconstructor):
             corrHatAbsMaxActualHistory.append(corrHatAbsMaxActual)
             
             activeSetActual = np.where(np.abs(corrHatAbs - corrHatAbsMax) < self.EPS)[0] # (2.9)
-#            activeSetActual = np.where(corrHatFlat == corrHatMax)[0] # (2.9)
 
             if (nVerbose >= 1):
                 if activeSetActual.size > 0:
@@ -246,28 +244,20 @@ class LarsReconstructor(AbstractReconstructor):
                     msgBuffer.append('Corr(activeSetActual): n/a')
                                                                                         
             if np.setxor1d(activeSet, activeSetActual).size != 0:
-#                raise RuntimeError('Iteration ' + str(numIter) + 
-#                                   ' activeSet and activeSetActual aren\'t the same. ActiveSet is ' + str(activeSet) +
-#                                   ' vs. ActiveSetActual is ' + str(activeSetActual))
-                # The calculation of activeSetActual isn't very accurate. Raise a warning instead of an exception.
+                # Numerical inaccuracy might result in a difference
                 warnings.warn("Iteration {0}: activeSet and activeSetActual aren't the same.\n".format(numIter) +
                               "ActiveSet is {0} vs. ActiveSetActual is {1}".format(activeSet, activeSetActual),
                               RuntimeWarning
                               ) 
-                                                        
-            if (lastIndexToJoinActiveSet is None):                
-                assert (numIter == 0) and (activeSetResult is None) and (len(XActiveSetColumns) == 0) 
-                assert activeSet.size == 1                                
-                lastIndexToJoinActiveSet = np.array([activeSet[0]])
-                                                
-            s = np.sign(corrHat.flat)            
+                                                                                                                
+            corrHatSign = np.sign(corrHat.flat)                                    
             
             assert lastIndexToJoinActiveSet is not None
             
             for jHat in lastIndexToJoinActiveSet:                            
-                singlePoint = np.zeros(s.shape)
-                assert s[jHat] != 0                        
-                singlePoint[jHat] = s[jHat]            
+                singlePoint = np.zeros(corrHatSign.shape)
+                assert corrHatSign[jHat] != 0                        
+                singlePoint[jHat] = corrHatSign[jHat]            
                 singlePsf = fnConvolveWithPsf(np.reshape(singlePoint, y.shape))
                 XActiveSetColumns.append(np.array(singlePsf.flat))             
                            
@@ -280,7 +270,7 @@ class LarsReconstructor(AbstractReconstructor):
                                                                                              activeSet.size)
                                    )                    
                                            
-            activeSetResult = LarsReconstructor._CalculateAU(XActiveSet)
+            activeSetResult = LarsReconstructor._CalculateActiveSetVariables(XActiveSet)
                                  
             a =  fnConvolveWithPsfPrime(np.reshape(activeSetResult['u'], y.shape))
             aFlat = a.flat
@@ -294,26 +284,29 @@ class LarsReconstructor(AbstractReconstructor):
                                                                   )
             
             if joinResult['gammaHatOtherDelta'].size > 0:
-                warnings.warn('gammaHat is {0} while the delta is {1}\n'.format(joinResult['gammaHat'], joinResult['gammaHatOtherDelta']) +
-                              'indHat is {0} while the other possibilities are {1}'.format(joinResult['indHat'], joinResult['indHatOther']),
-                              RuntimeWarning
-                              )
-                lastIndexToJoinActiveSet = LarsReconstructor._SelectNewJoinIndex(
-                                                                                joinResult, 
-                                                                                activeSetResult, 
-                                                                                activeSet, 
-                                                                                corrHatAbsMax, 
-                                                                                muHatActiveSet, 
-                                                                                fnComputeCorrHat, 
-                                                                                self.EPS
-                                                                                )  
+                msgOutput = 'gammaHat is {0} while the delta is {1}\n'.format(joinResult['gammaHat'], joinResult['gammaHatOtherDelta']) + \
+                            'indHat is {0} while the other possibilities are {1}'.format(joinResult['indHat'], joinResult['indHatOther'])
+                if bEnforceOneatatimeJoin:
+                    raise RuntimeError(msgOutput)
+                else:
+                    warnings.warn(msgOutput, RuntimeWarning)
+                lastIndexToJoinActiveSet, debugMsg = LarsReconstructor._SelectNewJoinIndex(
+                                                                                           joinResult, 
+                                                                                           activeSetResult, 
+                                                                                           activeSet, 
+                                                                                           corrHatAbsMax, 
+                                                                                           muHatActiveSet, 
+                                                                                           fnComputeCorrHat, 
+                                                                                           self.EPS
+                                                                                           )  
+                if nVerbose >= 1:
+                    msgBuffer.append(debugMsg)
                 for jHat in lastIndexToJoinActiveSet:
                     activeSet = np.append(activeSet, np.int(jHat))
             else:
                 lastIndexToJoinActiveSet = np.array([np.int(joinResult['indHat'])])
                 activeSet = np.append(activeSet, np.int(joinResult['indHat']))
                
-#            activeSetComplement = np.delete(activeSetComplement, lastIndexToJoinActiveSet)
             activeSetComplement = np.setdiff1d(np.arange(y.size), activeSet)
             assert activeSet.size + activeSetComplement.size == y.size
                                 
@@ -338,13 +331,19 @@ class LarsReconstructor(AbstractReconstructor):
 
         corrHatAbsMaxActualHistory.append(corrHatAbsMax)
                         
-        return { LarsReconstructor.OUTPUT_KEY_ACTIVESET: activeSet,
-                 LarsReconstructor.OUTPUT_KEY_MAX_CORRHAT_HISTORY: corrHatAbsMaxActualHistory,                 
-                 LarsReconstructor.OUTPUT_KEY_MUHAT_ACTIVESET: muHatActiveSet.flatten()
+        return { LarsConstants.OUTPUT_KEY_ACTIVESET: activeSet,
+                 LarsConstants.OUTPUT_KEY_MAX_CORRHAT_HISTORY: corrHatAbsMaxActualHistory,                 
+                 LarsConstants.OUTPUT_KEY_MUHAT_ACTIVESET: muHatActiveSet.flatten()
                 }
                     
-    def Estimate(self, y, psfRepH, theta0=None):
-        return self.Iterate(y, psfRepH)
+    def Estimate(self, y, convMatrixObj, theta0=None):
+        assert isinstance(convMatrixObj, AbstractConvolutionMatrix)
+#        fnConvolveWithPsf = lambda x: convMatrixObj.Multiply(x)
+#        fnConvolveWithPsfPrime = lambda x: convMatrixObj.MultiplyPrime(x)             
+        return self.Iterate(y,                             
+                            lambda x: convMatrixObj.Multiply(x),
+                            lambda x: convMatrixObj.MultiplyPrime(x)
+                            )
 
         
     

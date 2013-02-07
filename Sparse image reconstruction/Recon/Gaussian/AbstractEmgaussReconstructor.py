@@ -59,10 +59,9 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         assert isinstance(iterObserver, AbstractIterationsObserver)
         
         if iterObserver.RequireFitError == False:
-            fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN)
-        else:
-            #fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, fftFunction['ifft'](feN).real)
-            fnCallIterObserver = lambda tNp1, tN, feN: iterObserver.CheckTerminateCondition(tNp1, tN, feN)
+            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN)
+        else:            
+            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN, feN)
 
         # Do any initialization
         self.SetupBeforeIterations()
@@ -70,12 +69,11 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         # Run through the EM iterations
         numIter = 0;
         while numIter < maxIter:
-#            fitErrorNFft = yFft - np.multiply(psfFft, fftFunction['fft'](self._thetaN))
-#            correction = fftFunction['ifft'](np.multiply(psfFft.conj(), fitErrorNFft)).real
             fitErrorN = y - convMatrixObj.Multiply(self._thetaN)
             correction = convMatrixObj.MultiplyPrime(fitErrorN)
-            thetaNp1 = self.Mstep(self._thetaN + tau * correction, numIter)        
-            if fnCallIterObserver(thetaNp1, self._thetaN, fitErrorN):                
+            thetaNp1 = self.Mstep(self._thetaN + tau * correction, numIter)
+            fnUpdateIterObserver(thetaNp1, self._thetaN, fitErrorN)        
+            if iterObserver.TerminateIterations:                
                 self._terminationReason = 'Iterations observer, terminating after ' + str(numIter) + ' iterations'
                 break
             numIter += 1

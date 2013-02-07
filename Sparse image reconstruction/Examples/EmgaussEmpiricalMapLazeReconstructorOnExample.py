@@ -59,7 +59,7 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
         gbNormalizer.NormalizePsf(psfRepH)        
         optimSettingsDict = \
         {
-            AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 1e6,
+            AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 1e5,
             AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER: emgIterationsObserver,
             AbstractEmgaussReconstructor.INPUT_KEY_TAU: 1 / gbNormalizer.GetSpectralRadiusGramMatrixRowsH(),
             AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / np.sqrt(gbNormalizer.GetSpectralRadiusGramMatrixRowsH()),
@@ -142,6 +142,7 @@ def RunMap2(param):
 if __name__ == "__main__":
     SNRDB = 20;
     GSUP = 1/np.sqrt(2)
+    
     pool = Pool(processes=3)
     
 #    map1Result = RunMap1(SNRDB)
@@ -151,7 +152,7 @@ if __name__ == "__main__":
 #    for r1 in result1Pool:
 #        print r1
     
-#    map2Result = RunMap2(SNRDB, 1/np.sqrt(2))
+#    map2Result = RunMap2([SNRDB, 1/np.sqrt(2)])
 #    print("MAP2: {0}, est. hyperparameter = {1}".format(map2Result['termination_reason'], map2Result['hyperparameter']))
 #    print("MAP2(gSup=1/sqrt(2)): l2 norm of reconstruction error is {0}".format(map2Result['error_l2_norm']))
     result2Pool = pool.map(RunMap2, [[SNRDB, GSUP]]*10)
