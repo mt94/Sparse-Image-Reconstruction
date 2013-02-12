@@ -2,7 +2,9 @@ import numpy as np
 import warnings
 
 from LarsConstants import LarsConstants
+from LarsIterationEvaluator import LarsIterationEvaluator
 from Recon.AbstractReconstructor import AbstractReconstructor
+from Recon.AbstractIterationsObserver import AbstractIterationsObserver
 from Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
 #from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
@@ -116,7 +118,6 @@ class LarsReconstructor(AbstractReconstructor):
                                                      (corrHatAbsMax + cj[indTmp])/(AActiveSet + aj[indTmp]) - gammaCandidate
                                                      )
                                                 
-#        return { 'indHat': indCandidate, 'gammaHat': gammaCandidate}
         return { 'indHat': indCandidate, 
                  'gammaHat': gammaCandidate,
                  'indHatOther': indCandidateOther,
@@ -191,13 +192,22 @@ class LarsReconstructor(AbstractReconstructor):
         activeSetComplement = np.setdiff1d(np.arange(y.size), activeSet)
         assert activeSetComplement.size == (y.size - 1)
                 
-        return maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement
+        iterObserver = self._optimSettingsDict[LarsConstants.INPUT_KEY_ITERATIONS_OBSERVER] \
+            if LarsConstants.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict \
+            else None
+            
+        if iterObserver is not None:
+            assert isinstance(iterObserver, AbstractIterationsObserver)
+            
+        return maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement, iterObserver
                                             
     def Iterate(self, y, fnConvolveWithPsf, fnConvolveWithPsfPrime):
                                             
-        maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement = self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
+        maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement, iterObserver = \
+            self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
                                                                                 
         muHatActiveSet = np.matrix(np.zeros((y.size, 1)))
+        betaHatActiveSet = np.matrix(np.zeros((y.size, 1)))
         
         XActiveSetColumns = []       
         corrHatAbsMaxActualHistory = []                
@@ -320,8 +330,21 @@ class LarsReconstructor(AbstractReconstructor):
                                                                                                                 )
                                  )
                 
-            muHatActiveSet += joinResult['gammaHat']*activeSetResult['u']                                            
-            
+            muHatActiveSet += joinResult['gammaHat']*activeSetResult['u']
+                                                        
+            dHat = np.zeros(betaHatActiveSet.shape)
+            dHat[activeSet] = np.transpose(corrHatSign[activeSet]*np.transpose(activeSetResult['w']))
+            betaHatActiveSet += joinResult['gammaHat']*dHat
+                    
+            if iterObserver is not None:
+                # Don't use UpdateEstimates anymore
+#                iterObserver.UpdateEstimates(betaHatActiveSet, None, y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)))
+                iterObserver.UpdateState({
+                                          LarsIterationEvaluator.STATE_KEY_THETA: betaHatActiveSet,
+                                          LarsIterationEvaluator.STATE_KEY_FIT_ERROR: y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)),
+                                          LarsIterationEvaluator.STATE_KEY_CORRHATABS_MAX: corrHatAbsMax
+                                          })  
+                                    
             numIter += 1
             
             if len(msgBuffer) > 0:

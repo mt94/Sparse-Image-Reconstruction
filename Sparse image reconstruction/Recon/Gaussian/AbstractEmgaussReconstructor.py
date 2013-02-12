@@ -47,22 +47,20 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
             else 500
         tau = self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_TAU] \
             if AbstractEmgaussReconstructor.INPUT_KEY_TAU in self._optimSettingsDict \
-            else 1
-                
-#        fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(convMatrixObj.PsfShape)                        
-#        psfFft = fftFunction['fft'](psfRepH)            
-#        yFft = fftFunction['fft'](y)        
+            else 1                
         
         # Get the IterationsObserver object
         assert AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict   
         iterObserver = self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER]
         assert isinstance(iterObserver, AbstractIterationsObserver)
         
-        if iterObserver.RequireFitError == False:
-            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN)
-        else:            
-            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN, feN)
+#        if iterObserver.RequireFitError == False:
+#            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN)
+#        else:            
+#            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN, feN)
 
+        fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateEstimates(tNp1, tN, feN)
+        
         # Do any initialization
         self.SetupBeforeIterations()
                         

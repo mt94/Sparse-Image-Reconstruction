@@ -23,12 +23,13 @@ class EmgaussIterationsObserver(AbstractIterationsObserver):
             
         self._bTerminate = False
 
+    """ Implementation of abstract members """
+    
     @property
     def TerminateIterations(self):
         return self._bTerminate
-            
-    # Abstract method override
-    def UpdateObservations(self, thetaNp1, thetaN, fitErrorN=None):
+                
+    def UpdateEstimates(self, thetaNp1, thetaN, fitErrorN=None):
         if (self.terminateCondition == EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2):
 #            if (np.linalg.norm(thetaNp1 - thetaN, 2) < self.terminateTolerance):
             thetaDiff = np.reshape(thetaNp1 - thetaN, (thetaN.size,))            
@@ -38,3 +39,7 @@ class EmgaussIterationsObserver(AbstractIterationsObserver):
                 self._bTerminate = False
         else:
             raise NotImplementedError('Unrecognized termination condition')
+        
+    def UpdateState(self, stateDict):
+        raise NotImplementedError('Method unimplemented')
+        

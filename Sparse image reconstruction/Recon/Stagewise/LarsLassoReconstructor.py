@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 
 from LarsConstants import LarsConstants
+from LarsIterationEvaluator import LarsIterationEvaluator
 from LarsReconstructor import LarsReconstructor
 
 class LarsLassoReconstructor(LarsReconstructor):
@@ -31,7 +32,8 @@ class LarsLassoReconstructor(LarsReconstructor):
                 
     def Iterate(self, y, fnConvolveWithPsf, fnConvolveWithPsfPrime):
 
-        maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement = self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
+        maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement, iterObserver = \
+            self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
         
         # Only support one join at a time for the LARS-LASSO algorithm
         assert bEnforceOneatatimeJoin is True
@@ -176,8 +178,16 @@ class LarsLassoReconstructor(LarsReconstructor):
                                  )
                 
             muHatActiveSet += gammaHatCurrentIter*activeSetResult['u']
-            betaHatActiveSet += gammaHatCurrentIter*violationResult['d']                                            
+            betaHatActiveSet += gammaHatCurrentIter*violationResult['d']  
             
+            if iterObserver is not None:
+                # Don't use UpdateEstimates anymore
+#                iterObserver.UpdateEstimates(betaHatActiveSet, None, y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)))                                 
+                iterObserver.UpdateState({
+                                          LarsIterationEvaluator.STATE_KEY_THETA: betaHatActiveSet,
+                                          LarsIterationEvaluator.STATE_KEY_FIT_ERROR: y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)),
+                                          LarsIterationEvaluator.STATE_KEY_CORRHATABS_MAX: corrHatAbsMax
+                                          })              
             numIter += 1
             
             if len(msgBuffer) > 0:
