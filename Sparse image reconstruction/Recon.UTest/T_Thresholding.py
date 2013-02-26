@@ -2,7 +2,11 @@ import unittest
 import numpy as np
 import Systems.Thresholding as thr 
 
-class T_Thresholding(unittest.TestCase):    
+class T_Thresholding(unittest.TestCase):   
+    """
+    Unit tests for thresholding rules
+    """
+     
     def testIdentity(self):
         t = thr.ThresholdingIdentity()
         randomValues = np.random.random_sample((20,1)) * 100        

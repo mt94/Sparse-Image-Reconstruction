@@ -180,13 +180,12 @@ class LarsLassoReconstructor(LarsReconstructor):
             muHatActiveSet += gammaHatCurrentIter*activeSetResult['u']
             betaHatActiveSet += gammaHatCurrentIter*violationResult['d']  
             
-            if iterObserver is not None:
-                # Don't use UpdateEstimates anymore
-#                iterObserver.UpdateEstimates(betaHatActiveSet, None, y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)))                                 
+            if iterObserver is not None:                                
                 iterObserver.UpdateState({
                                           LarsIterationEvaluator.STATE_KEY_THETA: betaHatActiveSet,
                                           LarsIterationEvaluator.STATE_KEY_FIT_ERROR: y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)),
-                                          LarsIterationEvaluator.STATE_KEY_CORRHATABS_MAX: corrHatAbsMax
+                                          LarsIterationEvaluator.OUTPUT_METRIC_CORRHATABS_MAX: corrHatAbsMax,
+                                          LarsIterationEvaluator.FUNC_KEY_MU_FROM_THETA: lambda aTheta: fnConvolveWithPsf(np.reshape(aTheta, y.shape))
                                           })              
             numIter += 1
             
@@ -203,5 +202,4 @@ class LarsLassoReconstructor(LarsReconstructor):
                  LarsConstants.OUTPUT_KEY_BETAHAT_ACTIVESET: betaHatActiveSet.flatten(),
                  LarsConstants.OUTPUT_KEY_SIGN_VIOLATION_NUMITER: self._signViolationNumIter
                 }
-        
         

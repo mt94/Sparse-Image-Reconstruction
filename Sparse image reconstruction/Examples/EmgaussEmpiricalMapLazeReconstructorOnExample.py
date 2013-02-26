@@ -11,6 +11,10 @@ from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
+    """
+    Demonstrates the iterative thresholding implementation of the MAP reconstructor 
+    that uses the LAZE prior. 
+    """
     
     _concreteMapReconstructor = {
                                  'map1': EmgaussEmpiricalMapLaze1Reconstructor,

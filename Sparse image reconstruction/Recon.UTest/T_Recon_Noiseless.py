@@ -17,6 +17,10 @@ from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class T_Recon_Noiseless(unittest.TestCase):
+    """
+    Tests Landweber iterations and the deconvolution reconstructor in the case of a noiseless output.
+    Landweber iterations for a GaussianBlurWithNoise output converge slowly. 
+    """
     
     testMessages = []
     

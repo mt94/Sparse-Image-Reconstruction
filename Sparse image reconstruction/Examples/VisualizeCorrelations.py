@@ -7,6 +7,10 @@ from Sim.ImageGenerator import AbstractImageGenerator
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 
 class VisualizeCorrelations(AbstractExample):
+    """
+    Visualize correlations H'y, where y is the output of a GaussianBlurWithNoise object
+    """
+    
     def __init__(self, numNonzero, noiseSigma=0):
         super(VisualizeCorrelations, self).__init__('Visualize correlations with output')
         self._numNonzero = numNonzero        

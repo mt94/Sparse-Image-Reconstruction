@@ -337,12 +337,10 @@ class LarsReconstructor(AbstractReconstructor):
             betaHatActiveSet += joinResult['gammaHat']*dHat
                     
             if iterObserver is not None:
-                # Don't use UpdateEstimates anymore
-#                iterObserver.UpdateEstimates(betaHatActiveSet, None, y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)))
                 iterObserver.UpdateState({
                                           LarsIterationEvaluator.STATE_KEY_THETA: betaHatActiveSet,
                                           LarsIterationEvaluator.STATE_KEY_FIT_ERROR: y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)),
-                                          LarsIterationEvaluator.STATE_KEY_CORRHATABS_MAX: corrHatAbsMax
+                                          LarsIterationEvaluator.OUTPUT_METRIC_CORRHATABS_MAX: corrHatAbsMax
                                           })  
                                     
             numIter += 1
@@ -360,9 +358,7 @@ class LarsReconstructor(AbstractReconstructor):
                 }
                     
     def Estimate(self, y, convMatrixObj, theta0=None):
-        assert isinstance(convMatrixObj, AbstractConvolutionMatrix)
-#        fnConvolveWithPsf = lambda x: convMatrixObj.Multiply(x)
-#        fnConvolveWithPsfPrime = lambda x: convMatrixObj.MultiplyPrime(x)             
+        assert isinstance(convMatrixObj, AbstractConvolutionMatrix)      
         return self.Iterate(y,                             
                             lambda x: convMatrixObj.Multiply(x),
                             lambda x: convMatrixObj.MultiplyPrime(x)

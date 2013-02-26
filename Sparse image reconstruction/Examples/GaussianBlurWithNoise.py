@@ -8,6 +8,9 @@ from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFac
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class GaussianBlurWithNoise(AbstractExample):
+    """
+    Simulates 2d Gaussian blur and optionally adds AWGN.
+    """
     
     INPUT_KEY_NOISE_SIGMA = 'noiseSigma'
     INPUT_KEY_SNR_DB = 'snrDb'

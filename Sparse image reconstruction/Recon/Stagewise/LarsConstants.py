@@ -1,5 +1,8 @@
 
 class LarsConstants(object):
+    """
+    Constants for classes based on Lars 
+    """
     
     INPUT_KEY_ENFORCE_ONEATATIME_JOIN = 'enforce_oneatatime'
     INPUT_KEY_EPS = 'eps'    

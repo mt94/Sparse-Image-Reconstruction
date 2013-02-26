@@ -9,6 +9,9 @@ from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 
 class T_PsfLinearDerivative(unittest.TestCase):
+    """
+    Tests ConvolutionMatrixZeroMeanUnitNormDerivative
+    """
         
     TEST_IMAGE_SHAPE = (32, 32)    
             
