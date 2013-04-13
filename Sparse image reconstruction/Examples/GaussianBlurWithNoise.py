@@ -109,7 +109,7 @@ class GaussianBlurWithNoise(AbstractExample):
         
     
 if __name__ == "__main__":    
-    ex = GaussianBlurWithNoise({'snrDb': 40})
+    ex = GaussianBlurWithNoise({'snrDb': 20})
     ex.RunExample()
     
     """ Calculate the spectral radius of H*H^T. Must do this after running the chain,
