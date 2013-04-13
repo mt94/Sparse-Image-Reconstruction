@@ -4,7 +4,7 @@ class AbstractMcmcSampler(object):
     __metaclass__ = abc.ABCMeta
     
     def __init__(self):
-        super(object, self).__init__()
+        super(AbstractMcmcSampler, self).__init__()
         
     @abc.abstractmethod
     def SamplerSetup(self):

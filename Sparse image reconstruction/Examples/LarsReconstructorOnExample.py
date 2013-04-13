@@ -15,7 +15,7 @@ class LarsReconstructorOnExample(AbstractExample):
     Demonstrates Lars-based reconstructors
     """
     
-    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\Users\Mike\LeastAngleRegressionOnExampleGbwn.dump'
+    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\temp\LeastAngleRegressionOnExampleGbwn.dump'
     
     def __init__(self, reconstructorDesc, iterObserver, snrDb=None, bRestoreSim=False):
         super(LarsReconstructorOnExample, self).__init__('LARS example')
@@ -23,8 +23,8 @@ class LarsReconstructorOnExample(AbstractExample):
         self.iterObserver = iterObserver
         self.snrDb = snrDb
         self.bRestoreSim = bRestoreSim
-        self.reconResult = None
-        self.gbwn = None        
+#        self.reconResult = None
+#        self.gbwn = None        
         
     def RunExample(self):
         
@@ -98,8 +98,6 @@ if __name__ == "__main__":
             msg += ", SURE criterion: {0:.5f}".format(h[LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE])        
         print(msg)
                 
-    # Create plots
-
     # In order to remove the shift, must access the Blur block in the channel chain
     blurredImageWithNoiseForDisplay = ex.gbwn.channelChain \
                                              .channelBlocks[1] \
@@ -116,6 +114,7 @@ if __name__ == "__main__":
                                    .channelBlocks[1] \
                                    .RemoveShiftFromBlurredImage(estimatedMu)    
 
+    # Create plots
     if True:
         plt.ioff()
                                                              
