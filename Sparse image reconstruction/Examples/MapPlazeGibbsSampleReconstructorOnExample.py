@@ -13,8 +13,8 @@ from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 class MapPlazeGibbsSampleReconstructorOnExample(AbstractExample):
 
     """ Constants """
-    wInit = 0.2
-    aInit = 1
+    wInit = 0.1
+    aInit = 0.1
     varInitMin = 1e-8
     varInitMax = 10
         
@@ -30,21 +30,24 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractExample):
         else:
             self.gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: 0})            
         self.gbwn.RunExample()      
-                
-        # Store the true value in the iterations observer
-        self.iterObserver.xTrue = np.array(self.gbwn.channelChain.intermediateOutput[0].flat)
-        
-        print("SIM: SNR is {0} dB => noise var is {1}".format(self.snrDb, (self.gbwn.NoiseSigma) ** 2))          
+                        
+        xTrue = self.gbwn.channelChain.intermediateOutput[0]        
         y = self.gbwn.blurredImageWithNoise
         psfRepH = self.gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame
 #        convMatrixObj = ConvolutionMatrixZeroMeanUnitNormDerivative(psfRepH)
         convMatrixObj = ConvolutionMatrixUsingPsf(psfRepH)
+                
+        self.iterObserver.xTrue = np.array(xTrue.flat)
+        self.iterObserver.y = y
         
+        print("SIM: SNR is {0} dB => noise var is {1}".format(self.snrDb, (self.gbwn.NoiseSigma) ** 2))          
+                
         optimSettingsDict = { McmcConstants.INPUT_KEY_EPS: ComputeEnvironment.EPS,
-                              McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': 2e-2, 
-                                                                                   'alpha1': 2e-2 },
-                              McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER: self.iterObserver,
-                              McmcConstants.INPUT_KEY_NVERBOSE: 2                          
+                              McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': 1e-2, 
+                                                                                   'alpha1': 1e-2 },
+                              McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER: self.iterObserver,                              
+                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: 3000,
+                              McmcConstants.INPUT_KEY_NVERBOSE: 1                 
                              }
         reconstructor = MapPlazeGibbsSamplerReconstructor(optimSettingsDict)
         
@@ -53,24 +56,36 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractExample):
         
         initTheta = np.reshape(reconstructor.DoSamplingXPrior(self.wInit, self.aInit, M), y.shape)
         initVar = reconstructor.DoSamplingPriorVariancePrior(self.varInitMin, self.varInitMax)
+#         initVar = (self.gbwn.NoiseSigma) ** 2
+#         initVar = 1e-2
+        
         print("INITIAL CONDS.: hyper: w={0}, a={1}; var: {2}".format(self.wInit, self.aInit, initVar))
         
-        initializationDict = { 'init_theta': initTheta, 'init_var': initVar }
-        # Plot the initial theta to be used by the Gibbs' Sampler
-        plt.figure(2)
-        plt.imshow(initTheta, interpolation='none')
-        plt.colorbar();
-        plt.title("Initial theta for Gibbs' Sampler");
-        plt.show(block=False)
-                                      
+        initializationDict = { 'init_theta': initTheta, 'init_var': initVar }                                                              
         self.reconResult = reconstructor.Estimate(y, convMatrixObj, initializationDict)
+          
+        # Plot xTrue
+        plt.figure(1); plt.imshow(xTrue, interpolation='none'); plt.colorbar()    
+        plt.title('xTrue')
+        # Plot the reconstructed result
+        plt.figure(); plt.imshow(np.reshape(self.reconResult, xTrue.shape), interpolation='none'); plt.colorbar()
+        plt.title('Reconstructed x')
+        # Plot yErr and its histogram
+        yErr = y - np.reshape(reconstructor.hx, y.shape)
+        plt.figure(); plt.imshow(yErr, interpolation='none'); plt.colorbar()
+        plt.title('yErr')
+        plt.figure(); plt.hist(yErr.flat, 20); plt.title('Histogram of yErr')
+       
         
 if __name__ == "__main__":    
     iterEvaluator = McmcIterationEvaluator(ComputeEnvironment.EPS, 
                                            (32, 32), 
                                            None,
-                                           3,
-                                           np.array((1, 1000, 2000))
+                                           10,
+                                           None,
+                                           np.array((300, 1000))
+                                           #np.arange(100, 1000, 100)
+                                           #np.arange(1000)
                                            )
     ex = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, 20)
     ex.RunExample()      

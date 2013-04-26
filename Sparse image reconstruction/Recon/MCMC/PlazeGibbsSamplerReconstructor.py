@@ -58,32 +58,32 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         logging.basicConfig(filename='PlazeGibbsSamplerReconstructor-{0}-{1}-{2}.log'.format(datetimeNow.year,
                                                                                              datetimeNow.month,
                                                                                              datetimeNow.day),
-                            format='%(asctime)s %(message)s',
-                            level=logging.DEBUG)
+                            filemode="w+",
+                            format='%(asctime)s %(message)s',                            
+                            level=logging.INFO)
         
     # Constants for the static method _C 
     CONST_SQRT_HALF_PI = math.sqrt(math.pi/2)
     CONST_SQRT_2 = math.sqrt(2)
         
-    @staticmethod
-    def _C(m, sSquared):
-        """ C(m,s^2) as given by (25) """
-        s = math.sqrt(sSquared)
-        assert s > 0
-        return PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * s * (1 + math.erf(m / PlazeGibbsSamplerReconstructor.CONST_SQRT_2 / s))
-                            
-    CONST_SERIES_TRUNC_N = 20
+#     @staticmethod
+#     def _C(m, sSquared):
+#         """ C(m,s^2) as given by (25) """
+#         s = math.sqrt(sSquared)
+#         assert s > 0
+#         return PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * s * (1 + math.erf(m / PlazeGibbsSamplerReconstructor.CONST_SQRT_2 / s))
+#                             
+#     CONST_SERIES_TRUNC_N = 20
     
     # Sample xInd|w, a, sigma^2, y, x\xInd
-    def _DoSamplingSpecificXConditionedAll(self, w, a, ind, fitErrInd):
-        assert (a > 0) and (w > 0)        
+    def DoSamplingSpecificXConditionedAll(self, w, a, ind, fitErrExcludingInd, varLast, bLogDebug=False):
+        assert (a > 0) and (w > 0)                        
+        assert varLast > 0
         
-        lastVar = self.varianceSeq[-1]
-        assert lastVar > 0
-        etaIndSquared = lastVar / self._hNormSquared[ind]
-                
-        dotProduct = np.dot(np.array(fitErrInd.flat), self._h[:, ind])
-        muInd = etaIndSquared * (dotProduct / lastVar - 1 / a)
+        etaIndSquared = varLast / self._hNormSquared[ind]            
+        dotProduct = np.sum(fitErrExcludingInd * self._h[:, ind])
+        muIndComponents = (dotProduct / self._hNormSquared[ind], -etaIndSquared / a)
+        muInd = sum(muIndComponents)
         
         """
         When y is big, the simplistic method doesn't work since we're trying to multiply a
@@ -101,90 +101,89 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
 #             NumericalHelper.CalculateSmallBigExpressionUsingApprox(y)
                 
         uInd = (w / a) * mpmath.sqrt(etaIndSquared) * PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * \
-            mpmath.erfc(y) * mpmath.exp(y * y)
-                        
-#         logging.debug('      lv={0:.4e}, hns={1:.4f}, dp={2:.4e}, mu={3:.4f}, y={4:.4f}: approx uInd -> {5:.4e}'.format(
-#                                                                                                                         lastVar,
-#                                                                                                                         self._hNormSquared[ind],
-#                                                                                                                         dotProduct,
-#                                                                                                                         muInd,
-#                                                                                                                         y, 
-#                                                                                                                         uInd
-#                                                                                                                         ))     
-            
+            mpmath.erfc(y) * mpmath.exp(y * y)                                   
         uIndFloat = float(uInd)
         assert (uIndFloat > 0)
-        wInd = uIndFloat / (uIndFloat + (1 - w))            
-
+        
+        if uIndFloat == float('inf'):
+            wInd = 1
+        else:
+            wInd = uIndFloat / (uIndFloat + (1 - w))            
+                                                                                                                
         if ((wInd < 0) or (wInd > 1)):
             raise ValueError('uInd is {0} and wInd is {1}'.format(uInd, wInd))                                    
         
         if pymc.rbernoulli(wInd):
             # With probability wInd, generate a sample from a truncated Gaussian r.v. (support (0,Inf))
 #             xSample = pymc.rtruncated_normal(muInd, 1/etaIndSquared, a=0)[0]            
-            xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)
+            xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)[0]
             if (xSample < 0):
-                logging.error("Problem at i={0}: muInd={1}, etaIndSquared={2}, dotProduct={3}: xSample is {4}".format(ind,
-                                                                                                                      muInd,
-                                                                                                                      etaIndSquared,
-                                                                                                                      dotProduct,
-                                                                                                                      xSample))
-                raise ValueError('xSample cannot be negative')
-            return xSample
+                logging.error("Problem at {0}: {1}, {2}, {3}={4}-{5}, {6}: xSample is {7}".format(ind,
+                                                                                                  etaIndSquared,
+                                                                                                  muInd,
+                                                                                                  muIndComponents[0],
+                                                                                                  -muIndComponents[1],
+                                                                                                  uIndFloat,
+                                                                                                  wInd,                                                                                         
+                                                                                                  xSample))
+                raise ValueError('xSample cannot be negative')          
         else:
             # With probability (1-wInd), generate 0
-            return 0
+            xSample = 0
+        
+        if bLogDebug:
+            logging.debug('      {0}/{1}: {2:.5e}, {3:.5f}={4:.5f}-{5:.5f}, {6:.5e}, {7:.5e}: {8:.5e}'.format(self._samplerIter,
+                                                                                                              ind, 
+                                                                                                              etaIndSquared, 
+                                                                                                              muInd, 
+                                                                                                              muIndComponents[0],
+                                                                                                              -muIndComponents[1],
+                                                                                                              uIndFloat, 
+                                                                                                              wInd, 
+                                                                                                              xSample))
+            
+        return xSample
                              
     # Sample x|w, a, sigma^2, y    
-    def _DoSamplingXConditionedAll(self, y, w, a):
-        try:
-            xLast = self.xSeq[-1]
-        except:
-            raise NameError('Cannot access xLast')
-                
+    def DoSamplingXConditionedAll(self, y, w, a, varLast, xLast, hxLast, bLogDebug=False):                
         M = xLast.size
         xNext = np.copy(xLast)
-                
-        # Initially, this contains the forward map applied to xLast
-        vecT = np.copy(self._mappedX) 
+        hxNext = np.copy(hxLast) 
 
-        # SANITY
-        chkT = np.zeros(vecT.shape)
+        #/// BEGIN SANITY
+        hxLast2 = np.zeros(hxLast.shape)
         for ind in range(M):
-            _hInd = self._h[:, ind]            
-            chkT[:, 0] += xLast[ind] * _hInd
+            hInd = self._h[:, ind]            
+            hxLast2[:, 0] += (xLast[ind] * hInd)
 
-        deltaT = chkT - vecT            
-        deltaTNorm = math.sqrt(np.sum(deltaT * deltaT))
-        vecTNorm = math.sqrt(np.sum(vecT * vecT))
+        discrepency = hxLast2 - hxLast            
+        discrepencyNorm = math.sqrt(np.sum(discrepency * discrepency))
+        hxLastNorm = math.sqrt(np.sum(hxLast * hxLast))
+        hxLast2Norm = math.sqrt(np.sum(hxLast2 * hxLast2))            
         
-        if (not(deltaTNorm < self.Eps * 1e2) and not(deltaTNorm < 1e-8 * vecTNorm)):
-            raise RuntimeError('|vecT| is {0} and |deltaT| is {1}'.format(vecTNorm, deltaTNorm))
-
+        if (discrepencyNorm > self.Eps * 1e2):
+            raise RuntimeError('|dis| is {0}: |hxLast| = {1}, |hxLast2| = {2}'.format(discrepencyNorm, hxLastNorm, hxLast2Norm))
+        #/// END SANITY
+        
         # Sample each xInd                             
         for ind in range(M):
-            _hInd = self._h[:, ind]
-            vecTWithoutInd = vecT[:, 0] - xNext[ind] * _hInd  # Temp var only needed for each iteration
-            fitErrInd = y - vecTWithoutInd
-            xInd = self._DoSamplingSpecificXConditionedAll(w, a, ind, fitErrInd)
+            hInd = self._h[:, ind]
+            hxExcludingInd = hxNext[:, 0] - xNext[ind] * hInd  # Temp var only needed for each iteration
+            fitErrExcludingInd = y - hxExcludingInd
+            xInd = self.DoSamplingSpecificXConditionedAll(w, a, ind, fitErrExcludingInd, varLast, bLogDebug)
             xNext[ind] = xInd # Replace the ind-th component with the newly sampled xInd
-            vecT[:, 0] = vecTWithoutInd + xNext[ind] * _hInd           
+            hxNext[:, 0] = hxExcludingInd + xNext[ind] * hInd           
 
-        # Add to self.xSeq
-        xSeqLength = len(self.xSeq)
-        self.xSeq.append(xNext)
-        assert len(self.xSeq) == (xSeqLength + 1)
-        
-        # Update T(xNext)
-        self._mappedX = vecT
+        return (xNext, hxNext)
 
     # One iteration of the Gibbs sampler. Assume that _InitializeForSamplingX has been called.   
-    def _DoSamplingIteration(self, y):        
+    def DoSamplingIteration(self, y):        
         # Setup
         try:
             xLast = self.xSeq[-1]
+            varLast = self.varianceSeq[-1]
         except:
-            raise NameError('Cannot access xLast')
+            raise NameError('Cannot access xLast and/or varLast')
         
         # n0 = #{ i : xLast[i] == 0} whereas n1 = ||xLast||_0        
         n0, n1 = NumericalHelper.CalculateNumZerosNonzeros(xLast, self.Eps)
@@ -212,36 +211,36 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
                     
         self.hyperparameterSeq.append({'w' : wSample, 'a' : aSample})        
         
-        # Sample to get x_i, 1 <= i <= M. The method _DoSamplingXConditionedAll updates self.xSeq and self._mappedX
-        xSeqLen = len(self.xSeq)
-        self._DoSamplingXConditionedAll(y, wSample, aSample)
-        assert (xSeqLen + 1) == len(self.xSeq)
-        
+        # Sample to get x_i, 1 <= i <= M. The method DoSamplingXConditionedAll updates self.xSeq and self._mappedX        
+        xNext, hxNext = self.DoSamplingXConditionedAll(y, wSample, aSample, varLast, xLast, self.hx, self.nVerbose > 0)
+                
         # Sample to get variance
-        err = y - self._mappedX
+        yErr = y - hxNext[:, 0]
         igShapeForVariance = y.size / 2
-        igScaleForVariance = np.sum(err * err) / 2
+        igScaleForVariance = np.sum(yErr * yErr) / 2
         varianceSample = pymc.rinverse_gamma(igShapeForVariance, igScaleForVariance)        
         logging.info("  Samp. Iter. {0}, generating varianceSample ~ IG({1:.4f},{2:.4f}) ... {3:.4e}".format(
                                                                                                              self._samplerIter,
                                                                                                              igShapeForVariance, 
                                                                                                              igScaleForVariance, 
                                                                                                              varianceSample
-                                                                                                             ))
-        varianceSampleLen = len(self.varianceSeq)
-        self.varianceSeq.append(varianceSample)
-        assert (varianceSampleLen + 1) == len(self.varianceSeq)
+                                                                                                             ))        
+        self.varianceSeq.append(varianceSample)        
 
         self.iterObserver.UpdateState({
                                        McmcIterationEvaluator.STATE_KEY_COUNT_ITER: self._samplerIter,
-                                       McmcIterationEvaluator.STATE_KEY_X_ITER: self.xSeq[-1],
+                                       McmcIterationEvaluator.STATE_KEY_X_ITER: xNext,
+                                       McmcIterationEvaluator.STATE_KEY_HX_ITER: hxNext,
                                        McmcIterationEvaluator.STATE_KEY_W_ITER: wSample,
                                        McmcIterationEvaluator.STATE_KEY_A_ITER: aSample,
                                        McmcIterationEvaluator.STATE_KEY_NOISEVAR_ITER: varianceSample
                                        })
         
+        self.xSeq.append(xNext)
         assert len(self.xSeq) == len(self.varianceSeq)
-        assert (len(self.hyperparameterSeq) + 1) == len(self.xSeq) 
+        assert len(self.xSeq) == (len(self.hyperparameterSeq) + 1) 
+        
+        self.hx = hxNext
 
     """ Public methods """
     
@@ -317,7 +316,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             self._hNormSquared[ind] = np.sum(self._h[:,ind] * self._h[:,ind])
             assert self._hNormSquared[ind] > 0
             
-        self._mappedX = np.reshape(forwardMap(x0), (M, 1))
+        self.hx = np.reshape(forwardMap(x0), (M, 1))
         
         self.bSamplerRun = False        
         
@@ -331,7 +330,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         
         for iterNum in range(self.Iterations + self.BurninSamples):
             self._samplerIter = iterNum + 1
-            self._DoSamplingIteration(yFlat)
+            self.DoSamplingIteration(yFlat)
             
         self.bSamplerRun = True
             

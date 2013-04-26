@@ -1,2 +1,5 @@
 *.pyc
 .metadata
+/Sparse image reconstruction/Examples/*.log
+/Sparse image reconstruction/Examples/*.log
+/Sparse image reconstruction/Examples/*.log
