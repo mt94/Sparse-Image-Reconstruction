@@ -1,6 +1,6 @@
 from ChannelBlock import AbstractChannelBlock
 from Sim.ImageGenerator import AbstractImageGenerator
-from Sim.Blur import Blur
+from Sim.Blur import AbstractBlur
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 
 class ChannelProcessingChain(object):
@@ -14,7 +14,7 @@ class ChannelProcessingChain(object):
     
     @staticmethod
     def ProcessBlur(channelBlock, theta):
-        if not issubclass(channelBlock.__class__, Blur):
+        if not issubclass(channelBlock.__class__, AbstractBlur):
             raise TypeError('Expect channelBlock to be a Blur. Instead, it\'s a ' + 
                             channelBlock.__class__.__name__);
         else:

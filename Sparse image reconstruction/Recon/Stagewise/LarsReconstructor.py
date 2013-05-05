@@ -11,12 +11,8 @@ from Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
 class LarsReconstructor(AbstractReconstructor):
     
     def __init__(self, optimSettingsDict=None):   
-        super(LarsReconstructor, self).__init__()                
-        
-        self.EPS = optimSettingsDict[LarsConstants.INPUT_KEY_EPS] \
-            if LarsConstants.INPUT_KEY_EPS in optimSettingsDict \
-            else 1.0e-7
-                    
+        super(LarsReconstructor, self).__init__()                        
+        self.EPS = optimSettingsDict.get(LarsConstants.INPUT_KEY_EPS, 1.0e-7)                    
         self._optimSettingsDict = optimSettingsDict            
 
     """ Calculate AActiveSet and uActiveSet using XActiveSet via (2.5) and (2.6). Assume that 
@@ -168,17 +164,9 @@ class LarsReconstructor(AbstractReconstructor):
         return np.array(indHatIntList), debugMsg
 
     def _GetVariablesForIteration(self, y, fnConvolveWithPsfPrime):
-        maxIter = self._optimSettingsDict[LarsConstants.INPUT_KEY_MAX_ITERATIONS] \
-            if LarsConstants.INPUT_KEY_MAX_ITERATIONS in self._optimSettingsDict \
-            else 500
-            
-        nVerbose = self._optimSettingsDict[LarsConstants.INPUT_KEY_NVERBOSE] \
-            if LarsConstants.INPUT_KEY_NVERBOSE in self._optimSettingsDict \
-            else 0            
-            
-        bEnforceOneatatimeJoin = self._optimSettingsDict[LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN] \
-            if LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN in self._optimSettingsDict \
-            else False
+        maxIter = self._optimSettingsDict.get(LarsConstants.INPUT_KEY_MAX_ITERATIONS, 500)
+        nVerbose = self._optimSettingsDict.get(LarsConstants.INPUT_KEY_NVERBOSE, 0)
+        bEnforceOneatatimeJoin = self._optimSettingsDict.get(LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN, False)
 
         HPrimey = fnConvolveWithPsfPrime(y)        
         fnComputeCorrHat = lambda x: HPrimey - fnConvolveWithPsfPrime(np.reshape(x, y.shape)) # 2.8
@@ -192,10 +180,7 @@ class LarsReconstructor(AbstractReconstructor):
         activeSetComplement = np.setdiff1d(np.arange(y.size), activeSet)
         assert activeSetComplement.size == (y.size - 1)
                 
-        iterObserver = self._optimSettingsDict[LarsConstants.INPUT_KEY_ITERATIONS_OBSERVER] \
-            if LarsConstants.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict \
-            else None
-            
+        iterObserver = self._optimSettingsDict.get(LarsConstants.INPUT_KEY_ITERATIONS_OBSERVER)            
         if iterObserver is not None:
             assert isinstance(iterObserver, AbstractIterationsObserver)
             

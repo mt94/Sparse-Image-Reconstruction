@@ -42,12 +42,8 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         # Get the starting point theta0
         self._thetaN = theta0
         
-        maxIter = self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS] \
-            if AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS in self._optimSettingsDict \
-            else 500
-        tau = self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_TAU] \
-            if AbstractEmgaussReconstructor.INPUT_KEY_TAU in self._optimSettingsDict \
-            else 1                
+        maxIter = self._optimSettingsDict.get(AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS, 500)
+        tau = self._optimSettingsDict.get(AbstractEmgaussReconstructor.INPUT_KEY_TAU, 1)
         
         # Get the IterationsObserver object
         assert AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict   

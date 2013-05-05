@@ -2,7 +2,7 @@ import pylab as plt
 
 from Channel.ChannelProcessingChain import ChannelProcessingChain
 from AbstractExample import AbstractExample
-from Sim.Blur import Blur
+from Sim.SyntheticBlur import SyntheticBlur
 from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory 
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
@@ -16,7 +16,7 @@ class GaussianBlurWithNoise(AbstractExample):
     INPUT_KEY_SNR_DB = 'snrDb'
            
     def __init__(self, simParametersDict):
-        super(GaussianBlurWithNoise, self).__init__('Gaussian Blur with additive Gaussian noise example')
+        super(GaussianBlurWithNoise, self).__init__('Gaussian SyntheticBlur with additive Gaussian noise example')
         self._simParametersDict = simParametersDict
         self.blurredImageWithNoise = None
         self.channelChain = None
@@ -45,8 +45,8 @@ class GaussianBlurWithNoise(AbstractExample):
             imageShape = (32, 32)
             
         try:
-            blurFwhm = self._simParametersDict[Blur.INPUT_KEY_FWHM]
-            blurNkhalf = self._simParametersDict[Blur.INPUT_KEY_NKHALF]
+            blurFwhm = self._simParametersDict[SyntheticBlur.INPUT_KEY_FWHM]
+            blurNkhalf = self._simParametersDict[SyntheticBlur.INPUT_KEY_NKHALF]
         except KeyError:
             blurFwhm = 3
             blurNkhalf = 5
@@ -72,10 +72,10 @@ class GaussianBlurWithNoise(AbstractExample):
         channelChain.channelBlocks.append(ig)
         
         blurParametersDict = {
-                              Blur.INPUT_KEY_FWHM: blurFwhm,
-                              Blur.INPUT_KEY_NKHALF: blurNkhalf                              
+                              SyntheticBlur.INPUT_KEY_FWHM: blurFwhm,
+                              SyntheticBlur.INPUT_KEY_NKHALF: blurNkhalf                              
                               }
-        gb = Blur(Blur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)        
+        gb = SyntheticBlur(SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)        
         channelChain.channelBlocks.append(gb)
         
         ng = NoiseGeneratorFactory.GetNoiseGenerator('additive_gaussian')
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     ex.RunExample()
     
     """ Calculate the spectral radius of H*H^T. Must do this after running the chain,
-        since gb.blurPsf is only created when the Blur channel block gets called. This
+        since gb.blurPsf is only created when the SyntheticBlur channel block gets called. This
         isn't an issue since PsfMatrixNormNormalizer is intended to be used in reconstruction,
         hence another processing chain.
     """
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     print 'Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
 
     
-    # In order to remove the shift, must access the Blur block in the channel chain
+    # In order to remove the shift, must access the SyntheticBlur block in the channel chain
     blurredImageWithNoiseForDisplay = ex.channelChain \
                                         .channelBlocks[1] \
                                         .RemoveShiftFromBlurredImage(ex.blurredImageWithNoise)

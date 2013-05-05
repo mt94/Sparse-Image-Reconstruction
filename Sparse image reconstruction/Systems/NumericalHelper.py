@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import operator
+import warnings
 import scipy.misc as spmisc
 from scipy.stats import norm
 from scipy.stats import truncnorm
@@ -35,6 +36,7 @@ class NumericalHelper(object):
         a truncated series expansion or approximation of the small term. If the truncated series expansion is 
         accurate enough, we should be ok.         
         """
+        warnings.warn("Approximation method isn't reliable: will be removed", DeprecationWarning)
         assert v >= NumericalHelper._SMALL_BIG_VMIN
         assert numTerms >= 1
         vv = -1 / 2 / (v ** 2)
@@ -52,6 +54,7 @@ class NumericalHelper(object):
         """
         Calculate erfc(v)*exp(v^2) for a large positive v by using an approx. for erfc(v).
         """
+        warnings.warn("Approximation method isn't reliable: will be removed", DeprecationWarning)
         assert v >= NumericalHelper._SMALL_BIG_VMIN
         t = 1/(1 + NumericalHelper._APPROX_COEFF_P*v)
         tPowers = [t, t ** 2, t ** 3, t ** 4, t ** 5]
@@ -135,11 +138,3 @@ class NumericalHelper(object):
         a = -muValue/sdValue
         rv = NumericalHelper.RandomTruncatedStandardNormal(a)
         return rv*sdValue + muValue
-
-            
-            
-            
-            
-            
-        
-        

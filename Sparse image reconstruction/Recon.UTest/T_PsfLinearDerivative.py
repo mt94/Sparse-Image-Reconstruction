@@ -3,7 +3,7 @@ import pylab as plt
 import unittest
 
 from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
-from Sim.Blur import Blur
+from Sim.SyntheticBlur import SyntheticBlur
 from Sim.ImageGenerator import AbstractImageGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
@@ -17,10 +17,10 @@ class T_PsfLinearDerivative(unittest.TestCase):
             
     def testMultiply(self):
         blurParametersDict = {
-                              Blur.INPUT_KEY_FWHM: 3,
-                              Blur.INPUT_KEY_NKHALF: 5                              
+                              SyntheticBlur.INPUT_KEY_FWHM: 3,
+                              SyntheticBlur.INPUT_KEY_NKHALF: 5                              
                               }
-        gb = Blur(Blur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)     
+        gb = SyntheticBlur(SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)     
         
         EPS_PRECISION_PLACES = np.int(np.floor(-1*np.log10(ComputeEnvironment.EPS))) # For EPS = 2.22e-16, this evaluates to 15
         

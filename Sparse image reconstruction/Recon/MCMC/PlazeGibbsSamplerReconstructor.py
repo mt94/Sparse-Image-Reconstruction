@@ -33,28 +33,15 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         self.hyperparameterPriorDict = optimSettingsDict[McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT]
             
         # Use defaults of 2000 iterations and 300 burn-in iterations    
-        self.Iterations = optimSettingsDict[McmcConstants.INPUT_KEY_NUM_ITERATIONS] \
-            if McmcConstants.INPUT_KEY_NUM_ITERATIONS in optimSettingsDict \
-            else 2000
+        self.Iterations = optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_ITERATIONS, 2000)            
+        self.BurninSamples = optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES, 300)                    
+        self.ThinningPeriod = optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD, 1) # By default, don't do any thinning
             
-        self.BurninSamples = optimSettingsDict[McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES] \
-            if McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES in optimSettingsDict \
-            else 300           
-             
-        # By default, don't do any thinning, although this isn't recommended
-        self.ThinningPeriod = optimSettingsDict[McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD] \
-            if McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD in optimSettingsDict \
-            else 1 
-            
-        self.iterObserver = optimSettingsDict[McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER] \
-            if McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER in optimSettingsDict \
-            else None
-            
-        self.nVerbose = optimSettingsDict[McmcConstants.INPUT_KEY_NVERBOSE] \
-            if McmcConstants.INPUT_KEY_NVERBOSE in optimSettingsDict \
-            else 0                           
+        self.iterObserver = optimSettingsDict.get(McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER)            
+        self.nVerbose = optimSettingsDict.get(McmcConstants.INPUT_KEY_NVERBOSE, 0)
                     
         datetimeNow = datetime.now()
+        
         logging.basicConfig(filename='PlazeGibbsSamplerReconstructor-{0}-{1}-{2}.log'.format(datetimeNow.year,
                                                                                              datetimeNow.month,
                                                                                              datetimeNow.day),
@@ -62,18 +49,13 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
                             format='%(asctime)s %(message)s',                            
                             level=logging.INFO)
         
+        # If no verbose turned on, set the level to Warning instead of Info
+        if (self.nVerbose == 0):
+            logging.Logger.setLevel('WARNING')
+        
     # Constants for the static method _C 
     CONST_SQRT_HALF_PI = math.sqrt(math.pi/2)
-    CONST_SQRT_2 = math.sqrt(2)
-        
-#     @staticmethod
-#     def _C(m, sSquared):
-#         """ C(m,s^2) as given by (25) """
-#         s = math.sqrt(sSquared)
-#         assert s > 0
-#         return PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * s * (1 + math.erf(m / PlazeGibbsSamplerReconstructor.CONST_SQRT_2 / s))
-#                             
-#     CONST_SERIES_TRUNC_N = 20
+    CONST_SQRT_2 = math.sqrt(2)        
     
     # Sample xInd|w, a, sigma^2, y, x\xInd
     def DoSamplingSpecificXConditionedAll(self, w, a, ind, fitErrExcludingInd, varLast, bLogDebug=False):
@@ -91,18 +73,11 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         a very large number. The final result is 0.
         """  
         y = -muInd / PlazeGibbsSamplerReconstructor.CONST_SQRT_2 / math.sqrt(etaIndSquared)
-        
-#         uInd = w / a * PlazeGibbsSamplerReconstructor._C(muInd, etaIndSquared) * math.exp(y ** 2)
-                      
-#         uInd = w / a * math.sqrt(etaIndSquared) * PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * \
-#             NumericalHelper.CalculateSmallBigExpressionUsingSeries(y, PlazeGibbsSamplerReconstructor.CONST_SERIES_TRUNC_N)
-
-#         uInd = w / a * math.sqrt(etaIndSquared) * PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * \
-#             NumericalHelper.CalculateSmallBigExpressionUsingApprox(y)
-                
+                        
         uInd = (w / a) * mpmath.sqrt(etaIndSquared) * PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * \
-            mpmath.erfc(y) * mpmath.exp(y * y)                                   
-        uIndFloat = float(uInd)
+            mpmath.erfc(y) * mpmath.exp(y * y)
+                                               
+        uIndFloat = float(uInd) # Convert to an ordinary Python float
         assert (uIndFloat > 0)
         
         if uIndFloat == float('inf'):
@@ -198,10 +173,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         igScaleForA = xLastL1Norm + self.hyperparameterPriorDict['alpha1']
         
         assert (igShapeForA > 0) and (igScaleForA > 0)
-        
-#         if (igShapeForA == self.hyperparameterPriorDict['alpha0']) or (igScaleForA == self.hyperparameterPriorDict['alpha1']):
-#             raise ValueError('Trying to generate aSample ~ IG({0},{1})'.format(igShapeForA, igScaleForA))
-        
+                
         try:
             aSample = pymc.rinverse_gamma(igShapeForA, igScaleForA)
         except (ZeroDivisionError, OverflowError) as e:
