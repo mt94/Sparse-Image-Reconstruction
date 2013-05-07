@@ -7,6 +7,7 @@ from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstru
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 from Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
@@ -42,9 +43,9 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractExample):
         
     def RunExample(self): 
         if (self.noiseSigma is not None) and (self.noiseSigma >= 0):       
-            gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: self.noiseSigma})
+            gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: self.noiseSigma})
         elif (self.snrDb is not None):
-            gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_SNR_DB: self.snrDb})
+            gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: self.snrDb})
         else:
             raise NameError('noiseSigma or snrDb must be set')  
         gbwn.RunExample()

@@ -6,6 +6,7 @@ from GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.MCMC.McmcConstants import McmcConstants
 from Recon.MCMC.McmcIterationEvaluator import McmcIterationEvaluator
 from Recon.MCMC.MapPlazeGibbsSamplerReconstructor import MapPlazeGibbsSamplerReconstructor
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 #from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
@@ -26,9 +27,9 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractExample):
     def RunExample(self):
         
         if (self.snrDb is not None):
-            self.gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_SNR_DB: self.snrDb})
+            self.gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: self.snrDb})
         else:
-            self.gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: 0})            
+            self.gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: 0})            
         self.gbwn.RunExample()      
                         
         xTrue = self.gbwn.channelChain.intermediateOutput[0]        

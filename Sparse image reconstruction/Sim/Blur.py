@@ -9,16 +9,19 @@ class AbstractBlur(chb.AbstractChannelBlock):
         self._blurShift = None
         self._thetaShape = None 
 
+    @property
+    def BlurShift(self):
+        return self._blurShift
+    
     def RemoveShiftFromBlurredImage(self, anImage):
-        if self._blurShift is None:
-            raise UnboundLocalError('_blurShift isn\'t defined')
+        if self.BlurShift is None:
+            raise UnboundLocalError("BlurShift isn't defined")
         else:
-            assert len(anImage.shape) == len(self._blurShift)
-            tmp = np.array(anImage)
-            blurShift = self._blurShift
-            assert np.all(blurShift > 0)            
-            for axisInd in range(len(blurShift)):                
-                tmp = np.roll(tmp, -blurShift[axisInd], axisInd)
+            assert len(anImage.shape) == len(self.BlurShift)
+            tmp = np.array(anImage)            
+            assert np.all(self.BlurShift > 0)            
+            for axisInd in range(len(self.BlurShift)):                
+                tmp = np.roll(tmp, -self.BlurShift[axisInd], axisInd)
             return np.matrix(tmp)
 
     @property

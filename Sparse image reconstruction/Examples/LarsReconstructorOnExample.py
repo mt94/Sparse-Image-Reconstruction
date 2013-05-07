@@ -7,6 +7,7 @@ from GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Stagewise.LarsConstants import LarsConstants
 from Recon.Stagewise.LarsIterationEvaluator import LarsIterationEvaluator
 from Recon.Stagewise.LarsReconstructorFactory import LarsReconstructorFactory
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 
@@ -30,9 +31,9 @@ class LarsReconstructorOnExample(AbstractExample):
         
         if (not self.bRestoreSim):
             if (self.snrDb is not None):
-                self.gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_SNR_DB: self.snrDb})
+                self.gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: self.snrDb})
             else:
-                self.gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: 0})            
+                self.gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: 0})            
             self.gbwn.RunExample()
             gbwn = self.gbwn
             pickle.dump(gbwn, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))

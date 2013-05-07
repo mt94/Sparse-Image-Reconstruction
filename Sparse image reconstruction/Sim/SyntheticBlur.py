@@ -44,25 +44,25 @@ class SyntheticBlur(AbstractBlur):
         super(SyntheticBlur, self).__init__()
         self._blurType = blurType
         self._blurParametersDict = blurParametersDict        
+
+        if (self._blurType == SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D):
+            fwhm = self._blurParametersDict.get(SyntheticBlur.INPUT_KEY_FWHM, SyntheticBlur.FWHM_DEFAULT)             
+            nkHalf = self._blurParametersDict.get(SyntheticBlur.INPUT_KEY_NKHALF, SyntheticBlur.NKHALF_DEFAULT)            
+                                    
+            # With the 2d Gaussian symmetric psf, we already know the shift that's introduced by blurring
+            self._blurShift = (nkHalf, nkHalf)
+            
+            self._blurPsf = SyntheticBlur.GaussianBlurSymmetric2d(fwhm, nkHalf)
+        else:
+            raise NotImplementedError("SyntheticBlur type " + self._blurType + " hasn't been implemented")
                                                               
-    def BlurImage(self, theta):
-        
-        fwhm = self._blurParametersDict.get(SyntheticBlur.INPUT_KEY_FWHM, SyntheticBlur.FWHM_DEFAULT)             
-        nkHalf = self._blurParametersDict.get(SyntheticBlur.INPUT_KEY_NKHALF, SyntheticBlur.NKHALF_DEFAULT)            
-        
-        # Blur the image using FFTs to do the convolution
-        if (self._blurType == SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D):            
+    def BlurImage(self, theta):                        
+        if (self._blurType == SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D):                        
             self._thetaShape = theta.shape
             if len(self._thetaShape) != 2:
                 raise ValueError('BLUR_GAUSSIAN_SYMMETRIC_2D requires theta to be 2-d')
             
-            # With the 2d Gaussian symmetric psf, we already know the shift that's introduced by blurring
-            self._blurShift = (nkHalf, nkHalf)
-            
-            psf = SyntheticBlur.GaussianBlurSymmetric2d(fwhm, nkHalf)
-            self._blurPsf = psf
-            
-            if (not np.all(self._thetaShape >= psf.shape)):
+            if (not np.all(self._thetaShape >= self._blurPsf.shape)):
                 raise ValueError("theta's shape must be at least as big as the blur's shape")            
                                     
             y = np.fft.ifft2(np.multiply(np.fft.fft2(self.BlurPsfInThetaFrame), np.fft.fft2(theta)))

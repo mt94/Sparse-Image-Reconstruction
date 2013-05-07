@@ -4,6 +4,7 @@ import pylab as plt
 from AbstractExample import AbstractExample
 from GaussianBlurWithNoise import GaussianBlurWithNoise
 from Sim.ImageGenerator import AbstractImageGenerator 
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 
 class VisualizeCorrelations(AbstractExample):
@@ -21,7 +22,8 @@ class VisualizeCorrelations(AbstractExample):
     """ Abstract method override """        
     def RunExample(self):
         # Set up the test
-        gbwn = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: self._noiseSigma,
+        gbwn = GaussianBlurWithNoise({
+                                      AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: self._noiseSigma,
                                       AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self._numNonzero
                                       }) 
         gbwn.RunExample()

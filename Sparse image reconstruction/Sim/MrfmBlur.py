@@ -64,6 +64,7 @@ class MrfmBlur(AbstractBlur):
     INPUT_KEY_BRES = 'Bres'
     INPUT_KEY_SMALL_M = 'm'
     INPUT_KEY_XPK = 'xPk'
+    INPUT_KEY_EPS = 'eps'
 
     BIG_M_DEFAULT = 1700        # Units is ??? Previously was set to 800.
     R0_DEFAULT = 60.17          # [nm]
@@ -79,6 +80,7 @@ class MrfmBlur(AbstractBlur):
                         
     def __init__(self, blurType, blurParametersDict):
         super(MrfmBlur, self).__init__()
+        
         self._blurType = blurType        
         self._xMesh = None
         self._yMesh = None
@@ -87,7 +89,19 @@ class MrfmBlur(AbstractBlur):
         self.m = blurParametersDict.get(MrfmBlur.INPUT_KEY_SMALL_M, MrfmBlur.SMALL_M_DEFAULT)
         self.Bext = blurParametersDict.get(MrfmBlur.INPUT_KEY_BEXT, MrfmBlur.BEXT_DEFAULT)
         self.Bres = blurParametersDict.get(MrfmBlur.INPUT_KEY_BRES, MrfmBlur.BRES_DEFAULT)
-        self.xPk = blurParametersDict.get(MrfmBlur.INPUT_KEY_XPK, MrfmBlur.XPK_DEFAULT) 
+        self.xPk = blurParametersDict.get(MrfmBlur.INPUT_KEY_XPK, MrfmBlur.XPK_DEFAULT)
+        self._eps =  blurParametersDict.get(MrfmBlur.INPUT_KEY_EPS, 2.22e-16)
+        
+        if (blurType == MrfmBlur.BLUR_2D):
+            psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z) 
+            psf2d = psf[:, :, 0]                
+            self._blurPsf = psf2d            
+            # Find support of psf in the x and y plane             
+            psfSupport = np.where(psf2d > self._eps)
+            # The blur shift is half of the max support in both x and y
+            self._blurShift = (math.floor(max(psfSupport[0]) / 2), math.floor(max(psfSupport[1]) / 2))            
+        else:
+            raise NotImplementedError("MrfmBlur type " + self._blurType + " hasn't been implemented")        
         
     """
     X, Y, Z
@@ -113,23 +127,15 @@ class MrfmBlur(AbstractBlur):
     def Z(self, value):
         self._zMesh = value
         
-    def BlurImage(self, theta):   
-
-        
+    def BlurImage(self, theta):       
         if (self._blurType == MrfmBlur.BLUR_2D):
             self._thetaShape = theta.shape
             if len(self._thetaShape) != 2:
                 raise ValueError('BLUR_2D requires theta to be 2-d')
             
-            psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z) 
-            psf2d = psf[:, :, 0]                
-            self._blurPsf = psf2d
-            
-            if (not np.all(self._thetaShape >= psf2d.shape)):
+            if (not np.all(self._thetaShape >= self._blurPsf.shape)):
                 raise ValueError("theta's shape must be at least as big as the blur's shape")            
-                                   
-            # Calculate the shift induced by convolving theta with the psf
-            
+                                                           
             y = np.fft.ifft2(np.multiply(np.fft.fft2(self.BlurPsfInThetaFrame), np.fft.fft2(theta)))
             return y.real                        
         else:
