@@ -5,32 +5,41 @@ from Blur import AbstractBlur
 class MrfmBlur(AbstractBlur):
     """
     STATIC METHODS
-    """
+    """   
     @staticmethod
-    def GetXyzMesh(xRange, yRange, zRange):
-        AllMeshes = np.mgrid(xRange, yRange, zRange)
-        return AllMeshes[0], AllMeshes[1], AllMeshes[2]
-        
+    def GetXyzMeshFor2d(xSpan, z0, numPoints):
+        meshDelta = 2*xSpan/numPoints
+        xyzMesh = np.mgrid[-xSpan:(xSpan + meshDelta):meshDelta, -xSpan:(xSpan + meshDelta):meshDelta, z0:(z0 + .1):.1]
+        return xyzMesh
+             
     @staticmethod
     def GetBmag(m, Bext, xMesh, yMesh, zMesh):
-        r = np.sqrt(xMesh ** 2 + yMesh ** 2 + zMesh ** 2)
-        rPower5 = r ** 5
-        a1 = 3 * xMesh * zMesh / rPower5 * m
-        a2 = 3 * yMesh * zMesh / rPower5 * m
-        a3 = (2 * zMesh ** 2 - xMesh ** 2 - yMesh ** 2) / rPower5 * m + Bext
-        return np.sqrt(a1 ** 2 + a2 ** 2 + a3 ** 2)
-    
-    @staticmethod
-    def GetG(m, Bext, xMesh, yMesh, zMesh):
-        r = np.sqrt(xMesh ** 2 + yMesh ** 2 + zMesh ** 2)
-        rPower12 = r ** 12
-        rPower10 = r ** 10
-        rPower7 = r ** 7
-        rPower5 = r ** 5
-        
         xMeshPower2 = xMesh ** 2
         yMeshPower2 = yMesh ** 2
         zMeshPower2 = zMesh ** 2
+        r = np.sqrt(xMeshPower2 + yMeshPower2 + zMeshPower2)
+                
+        rPower5 = r ** 5
+        a1 = 3 * xMesh * zMesh * m / rPower5 
+        a2 = 3 * yMesh * zMesh * m / rPower5
+        a3 = (2 * zMeshPower2 - xMeshPower2 - yMeshPower2) * m / rPower5 + Bext
+        
+        Bmag = np.sqrt(a1 ** 2 + a2 ** 2 + a3 ** 2)
+        Bmag[np.where(r == 0)] = np.NaN
+        return Bmag
+    
+    @staticmethod
+    def GetG(m, Bext, xMesh, yMesh, zMesh):
+        xMeshPower2 = xMesh ** 2
+        yMeshPower2 = yMesh ** 2
+        zMeshPower2 = zMesh ** 2
+        r = np.sqrt(xMeshPower2 + yMeshPower2 + zMeshPower2)        
+        
+        rPower5 = r ** 5
+        rPower7 = r ** 7
+        rPower10 = rPower5 * rPower5
+        rPower12 = rPower5 * rPower7
+
         n1 = -xMeshPower2 - yMeshPower2 + 2 * zMeshPower2
         mPower2 = m ** 2
         
@@ -42,20 +51,38 @@ class MrfmBlur(AbstractBlur):
         a4 = 9 * mPower2 * xMeshPower2 * zMeshPower2 / rPower10 + 9 * mPower2 * yMeshPower2 * zMeshPower2 / rPower10
         a5 = a3 ** 2;
 
-        return (a1 + 2 * a2 * a3) / (2 * np.sqrt(a4 + a5))
+        numer = a1 + 2 * a2 * a3
+        denom = 2 * np.sqrt(a4 + a5)
+        G = numer / denom
+        G[np.where(r == 0)] = np.NAN
+        return G        
     
     @staticmethod
     def GetS(Bmag, Bres, gMesh):
-        return (Bres - Bmag) / gMesh
+        # S <- (Bres - BMag)/gMesh, but because Bmag can contains NaNs, while gMesh can contains zeros and/or NaNs, 
+        # proceed in several steps            
+        S = Bres - Bmag 
+
+        # Carry out the division when G is finite and non-zero
+        indGDefined = np.where(np.logical_and(np.logical_not(np.isnan(gMesh)), (gMesh != 0)))
+        S[indGDefined] = S[indGDefined] / gMesh[indGDefined]        
+        
+        # Where G is NaN or zero, set S to NaN
+        indGUndefined = np.where(np.logical_or(np.isnan(gMesh), (gMesh == 0)))
+        S[indGUndefined] = np.NaN    
+        
+        return S        
     
     @staticmethod
     def GetPsfVerticalCantilever(m, Bext, Bres, xPk, xMesh, yMesh, zMesh):
         BmagMesh = MrfmBlur.GetBmag(m, Bext, xMesh, yMesh, zMesh)
-        GMesh = MrfmBlur.GetG(m, Bext, xMesh, yMesh, zMesh)
+        GMesh = MrfmBlur.GetG(m, Bext, xMesh, yMesh, zMesh)           
         sMesh = MrfmBlur.GetS(BmagMesh, Bres, GMesh)
-        tmpMesh = 1 - (sMesh ** 2) / (xPk ** 2)
-        tmpMesh[np.where(tmpMesh < 0)] = 0
-        return tmpMesh * (GMesh ** 2)
+        P = np.zeros(sMesh.shape, dtype=float)
+        indSDefined = np.where(np.logical_not(np.isnan(sMesh)))
+        P[indSDefined] = 1 - (sMesh[indSDefined] ** 2) / (xPk ** 2)        
+        P[np.where(P < 0)] = 0
+        return P * (GMesh ** 2)
             
     """
     CONSTANTS
@@ -65,6 +92,9 @@ class MrfmBlur(AbstractBlur):
     INPUT_KEY_SMALL_M = 'm'
     INPUT_KEY_XPK = 'xPk'
     INPUT_KEY_EPS = 'eps'
+    INPUT_KEY_XMESH = 'xMesh'
+    INPUT_KEY_YMESH = 'yMesh'
+    INPUT_KEY_ZMESH = 'zMesh'
 
     BIG_M_DEFAULT = 1700        # Units is ??? Previously was set to 800.
     R0_DEFAULT = 60.17          # [nm]
@@ -82,24 +112,26 @@ class MrfmBlur(AbstractBlur):
         super(MrfmBlur, self).__init__()
         
         self._blurType = blurType        
-        self._xMesh = None
-        self._yMesh = None
-        self._zMesh = None  
         
+        # Mesh parameters
+        self._xMesh = blurParametersDict.get(MrfmBlur.INPUT_KEY_XMESH)
+        self._yMesh = blurParametersDict.get(MrfmBlur.INPUT_KEY_YMESH)
+        self._zMesh = blurParametersDict.get(MrfmBlur.INPUT_KEY_ZMESH)
+                
+        # Experimental conditions
         self.m = blurParametersDict.get(MrfmBlur.INPUT_KEY_SMALL_M, MrfmBlur.SMALL_M_DEFAULT)
         self.Bext = blurParametersDict.get(MrfmBlur.INPUT_KEY_BEXT, MrfmBlur.BEXT_DEFAULT)
         self.Bres = blurParametersDict.get(MrfmBlur.INPUT_KEY_BRES, MrfmBlur.BRES_DEFAULT)
         self.xPk = blurParametersDict.get(MrfmBlur.INPUT_KEY_XPK, MrfmBlur.XPK_DEFAULT)
         self._eps =  blurParametersDict.get(MrfmBlur.INPUT_KEY_EPS, 2.22e-16)
+            
+        # Initialize
+        self._blurPsf = None
+        self._blurShift = None
         
         if (blurType == MrfmBlur.BLUR_2D):
-            psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z) 
-            psf2d = psf[:, :, 0]                
-            self._blurPsf = psf2d            
-            # Find support of psf in the x and y plane             
-            psfSupport = np.where(psf2d > self._eps)
-            # The blur shift is half of the max support in both x and y
-            self._blurShift = (math.floor(max(psfSupport[0]) / 2), math.floor(max(psfSupport[1]) / 2))            
+            if ((self.X is not None) and (self.Y is not None) and (self.Z is not None)):
+                self._GetBlurPsf()           
         else:
             raise NotImplementedError("MrfmBlur type " + self._blurType + " hasn't been implemented")        
         
@@ -109,23 +141,26 @@ class MrfmBlur(AbstractBlur):
     @property
     def X(self):
         return self._xMesh
-    @X.setter
-    def X(self, value):
-        self._xMesh = value
         
     @property
     def Y(self):
         return self._yMesh
-    @Y.setter
-    def Y(self, value):
-        self._yMesh = value
         
     @property
     def Z(self):
         return self._zMesh
-    @Z.setter
-    def Z(self, value):
-        self._zMesh = value
+        
+    def _GetBlurPsf(self):
+        if ((self.X is None) or (self.Y is None) or (self.Z is None)):
+            raise UnboundLocalError('Cannot get psf since mesh definition is undefined')
+        psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z) 
+        if (self._blurType == MrfmBlur.BLUR_2D):
+            psf2d = psf[:, :, 0]                
+            self._blurPsf = psf2d            
+            # Find support of psf in the x and y plane             
+            psfSupport = np.where(psf2d > self._eps)
+            # The blur shift is half of the max support in both x and y
+            self._blurShift = (math.floor(max(psfSupport[0]) / 2), math.floor(max(psfSupport[1]) / 2))         
         
     def BlurImage(self, theta):       
         if (self._blurType == MrfmBlur.BLUR_2D):
@@ -133,6 +168,8 @@ class MrfmBlur(AbstractBlur):
             if len(self._thetaShape) != 2:
                 raise ValueError('BLUR_2D requires theta to be 2-d')
             
+            if (self._blurPsf is None):
+                self._GetBlurPsf()
             if (not np.all(self._thetaShape >= self._blurPsf.shape)):
                 raise ValueError("theta's shape must be at least as big as the blur's shape")            
                                                            

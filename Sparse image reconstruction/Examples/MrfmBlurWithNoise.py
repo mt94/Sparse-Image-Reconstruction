@@ -1,8 +1,10 @@
+import numpy as np
 import pylab as plt
 
 from Channel.ChannelProcessingChain import ChannelProcessingChain
 from AbstractExample import AbstractExample
 from Sim.MrfmBlur import MrfmBlur
+from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
 from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory 
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
 
@@ -15,8 +17,8 @@ class MrfmBlurWithNoise(AbstractExample):
         self._simParametersDict = simParametersDict
         self.blurredImageWithNoise = None
         self.channelChain = None
-        self.blurPsfInThetaFrame = None        
-
+        self.blurPsfInThetaFrame = None      
+                
     @property
     def NoiseSigma(self):
         return self._simParametersDict.get(AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA)
@@ -39,10 +41,19 @@ class MrfmBlurWithNoise(AbstractExample):
 
         noiseSigma = self.NoiseSigma            
         snrDb = self.SnrDb
-            
-        # Create the MRFM blur
+
+        # Use numpy.mgrid to generate 3-d grid mesh          
+        xyzMesh = MrfmBlur.GetXyzMeshFor2d(self._simParametersDict['xspan'], 
+                                           self._simParametersDict['z0'], 
+                                           np.min([16, np.floor(imageShape[0]/2)])
+                                           )
+        self._simParametersDict[MrfmBlur.INPUT_KEY_XMESH] = np.array(xyzMesh[0], dtype=float)
+        self._simParametersDict[MrfmBlur.INPUT_KEY_YMESH] = np.array(xyzMesh[1], dtype=float)
+        self._simParametersDict[MrfmBlur.INPUT_KEY_ZMESH] = np.array(xyzMesh[2], dtype=float)
+                    
+        # Create the MRFM blur      
         mb = MrfmBlur(MrfmBlur.BLUR_2D, self._simParametersDict)
-        
+    
         # Construct the processing chain
         channelChain = ChannelProcessingChain(True)
         
@@ -86,6 +97,17 @@ class MrfmBlurWithNoise(AbstractExample):
                     
         self.blurPsfInThetaFrame = mb.BlurPsfInThetaFrame      
                 
-if __name__ == "__main__":    
-    ex = MrfmBlurWithNoise({'snrdb': 20})
+if __name__ == "__main__":   
+    opti = MrfmBlurParameterOptimizer()
+    opti.CalcOptimalValues(3e4, 3)   
+    # Construct the example object
+    ex = MrfmBlurWithNoise({
+                            'snrdb': 20,
+                            MrfmBlur.INPUT_KEY_BEXT: opti.Bext,
+                            MrfmBlur.INPUT_KEY_BRES: opti.Bres,
+                            MrfmBlur.INPUT_KEY_SMALL_M: opti.m,
+                            MrfmBlur.INPUT_KEY_XPK: opti.xPk,
+                            'xspan': opti.xSpan,
+                            'z0': opti.z0
+                            })
     ex.RunExample()              
