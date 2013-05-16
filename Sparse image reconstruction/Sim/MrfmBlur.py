@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pylab as plt
 from Blur import AbstractBlur
 
 class MrfmBlur(AbstractBlur):
@@ -8,8 +9,8 @@ class MrfmBlur(AbstractBlur):
     """   
     @staticmethod
     def GetXyzMeshFor2d(xSpan, z0, numPoints):
-        meshDelta = 2*xSpan/numPoints
-        xyzMesh = np.mgrid[-xSpan:(xSpan + meshDelta):meshDelta, -xSpan:(xSpan + meshDelta):meshDelta, z0:(z0 + .1):.1]
+        meshDelta = 2.0 * xSpan / (numPoints - 1.0)
+        xyzMesh = np.mgrid[-xSpan:(xSpan + 0.1*meshDelta):meshDelta, -xSpan:(xSpan + 0.1*meshDelta):meshDelta, z0:(z0 + .09):.1]
         return xyzMesh
              
     @staticmethod
@@ -128,6 +129,7 @@ class MrfmBlur(AbstractBlur):
         # Initialize
         self._blurPsf = None
         self._blurShift = None
+        self._psfSupport = None
         
         if (blurType == MrfmBlur.BLUR_2D):
             if ((self.X is not None) and (self.Y is not None) and (self.Z is not None)):
@@ -150,6 +152,10 @@ class MrfmBlur(AbstractBlur):
     def Z(self):
         return self._zMesh
         
+    @property
+    def PsfSupport(self):
+        return self._psfSupport
+            
     def _GetBlurPsf(self):
         if ((self.X is None) or (self.Y is None) or (self.Z is None)):
             raise UnboundLocalError('Cannot get psf since mesh definition is undefined')
@@ -158,9 +164,12 @@ class MrfmBlur(AbstractBlur):
             psf2d = psf[:, :, 0]                
             self._blurPsf = psf2d            
             # Find support of psf in the x and y plane             
-            psfSupport = np.where(psf2d > self._eps)
+            psfSupport = np.where(psf2d > 2*self._eps)
+            self._psfSupport = psfSupport
             # The blur shift is half of the max support in both x and y
-            self._blurShift = (math.floor(max(psfSupport[0]) / 2), math.floor(max(psfSupport[1]) / 2))         
+            blurShiftInXDir = min(psfSupport[0]) + math.floor((max(psfSupport[0]) - min(psfSupport[0])) / 2)
+            blurShiftInYDir = min(psfSupport[1]) + math.floor((max(psfSupport[1]) - min(psfSupport[1])) / 2)            
+            self._blurShift = (blurShiftInXDir, blurShiftInYDir)       
         
     def BlurImage(self, theta):       
         if (self._blurType == MrfmBlur.BLUR_2D):
@@ -171,7 +180,9 @@ class MrfmBlur(AbstractBlur):
             if (self._blurPsf is None):
                 self._GetBlurPsf()
             if (not np.all(self._thetaShape >= self._blurPsf.shape)):
-                raise ValueError("theta's shape must be at least as big as the blur's shape")            
+                raise ValueError("theta's shape: " + str(self._thetaShape) + 
+                                 " must be at least as big as the blur's shape: " + str(self._blurPsf.shape)
+                                 )            
                                                            
             y = np.fft.ifft2(np.multiply(np.fft.fft2(self.BlurPsfInThetaFrame), np.fft.fft2(theta)))
             return y.real                        

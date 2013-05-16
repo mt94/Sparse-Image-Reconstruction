@@ -1,5 +1,6 @@
 import abc
 import Channel.ChannelBlock as chb
+import math
 import numpy as np
 
 class AbstractBlur(chb.AbstractChannelBlock):
@@ -18,10 +19,11 @@ class AbstractBlur(chb.AbstractChannelBlock):
             raise UnboundLocalError("BlurShift isn't defined")
         else:
             assert len(anImage.shape) == len(self.BlurShift)
-            tmp = np.array(anImage)            
+#            tmp = np.array(anImage)
+            tmp = anImage            
             assert np.all(self.BlurShift > 0)            
             for axisInd in range(len(self.BlurShift)):                
-                tmp = np.roll(tmp, -self.BlurShift[axisInd], axisInd)
+                tmp = np.roll(tmp, int(-math.floor(self.BlurShift[axisInd])), axis=axisInd)
             return np.matrix(tmp)
 
     @property
