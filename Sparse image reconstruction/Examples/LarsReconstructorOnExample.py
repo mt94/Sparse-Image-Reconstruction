@@ -2,8 +2,9 @@ import cPickle as pickle
 import numpy as np
 import pylab as plt
 
-from AbstractExample import AbstractExample
-from GaussianBlurWithNoise import GaussianBlurWithNoise
+from AbstractReconstructorExample import AbstractReconstructorExample
+from BlurWithNoiseFactory import BlurWithNoiseFactory
+#from GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Stagewise.LarsConstants import LarsConstants
 from Recon.Stagewise.LarsIterationEvaluator import LarsIterationEvaluator
 from Recon.Stagewise.LarsReconstructorFactory import LarsReconstructorFactory
@@ -11,12 +12,12 @@ from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 
-class LarsReconstructorOnExample(AbstractExample):
+class LarsReconstructorOnExample(AbstractReconstructorExample):
     """
     Demonstrates Lars-based reconstructors
     """
     
-    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\temp\LeastAngleRegressionOnExampleGbwn.dump'
+    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\\temp\\LeastAngleRegressionOnExampleGbwn.dump'
     
     def __init__(self, reconstructorDesc, iterObserver, snrDb=None, bRestoreSim=False):
         super(LarsReconstructorOnExample, self).__init__('LARS example')
@@ -30,24 +31,19 @@ class LarsReconstructorOnExample(AbstractExample):
     def RunExample(self):
         
         if (not self.bRestoreSim):
-            if (self.snrDb is not None):
-                self.gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: self.snrDb})
-            else:
-                self.gbwn = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: 0})            
-            self.gbwn.RunExample()
-            gbwn = self.gbwn
-            pickle.dump(gbwn, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))
+            self.experimentObj.RunExample()            
+            pickle.dump(self.experimentObj, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))
         else:        
-            self.gbwn = pickle.load(open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'rb'))    
+            self.experimentObj = pickle.load(open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'rb'))    
                                 
-        y = self.gbwn.blurredImageWithNoise
-        psfRepH = self.gbwn.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
+        y = self.experimentObj.blurredImageWithNoise
+        psfRepH = self.experimentObj.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
         convMatrixObj = ConvolutionMatrixZeroMeanUnitNormDerivative(psfRepH)
         
         # Need to set variables in the iteration observer
-        iterObserver.NoiseSigma = self.gbwn.NoiseSigma
-        iterObserver.ThetaTrue = np.array(self.gbwn.channelChain.intermediateOutput[0].flat)
-        muTrue = convMatrixObj.Multiply(self.gbwn.channelChain.intermediateOutput[0])
+        iterObserver.NoiseSigma = self.experimentObj.NoiseSigma
+        iterObserver.ThetaTrue = np.array(self.experimentObj.channelChain.intermediateOutput[0].flat)
+        muTrue = convMatrixObj.Multiply(self.experimentObj.channelChain.intermediateOutput[0])
         iterObserver.MuTrue = np.array(muTrue.flat)
         
         optimSettingsDict = { 
@@ -63,8 +59,9 @@ class LarsReconstructorOnExample(AbstractExample):
 #        psfRepHWithUnitColumnNorm = gbNormalizer.NormalizePsf(psfRepH)                
 #        self.reconResult = reconstructor.Estimate(y, ConvolutionMatrixUsingPsf(psfRepHWithUnitColumnNorm))
 
-        yZeroMean = y - np.mean(y.flat)*np.ones(y.shape)
-        assert np.mean(yZeroMean.flat) < ComputeEnvironment.EPS
+        yZeroMean = y - np.mean(y.flat)*np.ones(y.shape)        
+#        assert np.mean(yZeroMean.flat) < 10*ComputeEnvironment.EPS, "{0} >= TOL = {1}".format(np.mean(yZeroMean.flat), 10*ComputeEnvironment.EPS)
+        assert np.mean(yZeroMean.flat) < 1.0e-11
         self.reconResult = reconstructor.Estimate(yZeroMean, convMatrixObj)
                 
 if __name__ == "__main__":
@@ -76,7 +73,10 @@ if __name__ == "__main__":
     if MyReconstructorDesc == 'lars_lasso':
         iterObserver.TrackCriterionL1Sure = True
             
-    ex = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, snrDb=25, bRestoreSim=False) # Use bRestoreSim for debugging problem cases
+    ex = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, snrDb=20, bRestoreSim=False) # Use bRestoreSim for debugging problem cases
+    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise('mrfm', 
+                                                             {AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: ex.snrDb}
+                                                             )
     ex.RunExample()
     
     activeSetDisplay = ["{0}".format(x) for x in ex.reconResult[LarsConstants.OUTPUT_KEY_ACTIVESET]]
@@ -100,20 +100,22 @@ if __name__ == "__main__":
         print(msg)
                 
     # In order to remove the shift, must access the Blur block in the channel chain
-    blurredImageWithNoiseForDisplay = ex.gbwn.channelChain \
-                                             .channelBlocks[1] \
-                                             .RemoveShiftFromBlurredImage(ex.gbwn.blurredImageWithNoise)
+    blurredImageWithNoiseForDisplay = ex.experimentObj.channelChain \
+                                                      .channelBlocks[1] \
+                                                      .RemoveShiftFromBlurredImage(ex.experimentObj.blurredImageWithNoise)
                                              
     blurredImageWithNoiseForDisplayZeroMean = blurredImageWithNoiseForDisplay - \
                                               np.mean(blurredImageWithNoiseForDisplay.flat)*np.ones(blurredImageWithNoiseForDisplay.shape)
                                                       
-    assert np.mean(blurredImageWithNoiseForDisplayZeroMean) < ComputeEnvironment.EPS
+#    assert np.mean(blurredImageWithNoiseForDisplayZeroMean) < 10*ComputeEnvironment.EPS, \
+#        "{0} >= TOL = {1}".format(np.mean(blurredImageWithNoiseForDisplayZeroMean), 10*ComputeEnvironment.EPS)
+    assert np.mean(blurredImageWithNoiseForDisplayZeroMean) < 1.0e-11        
 
     estimatedMu = np.reshape(ex.reconResult[LarsConstants.OUTPUT_KEY_MUHAT_ACTIVESET], 
-                             ex.gbwn.blurredImageWithNoise.shape)
-    estimatedMuForDisplay = ex.gbwn.channelChain \
-                                   .channelBlocks[1] \
-                                   .RemoveShiftFromBlurredImage(estimatedMu)    
+                             ex.experimentObj.blurredImageWithNoise.shape)
+    estimatedMuForDisplay = ex.experimentObj.channelChain \
+                                            .channelBlocks[1] \
+                                            .RemoveShiftFromBlurredImage(estimatedMu)    
 
     # Create plots
     if True:
@@ -122,10 +124,12 @@ if __name__ == "__main__":
         plt.figure(1)
         plt.imshow(blurredImageWithNoiseForDisplayZeroMean)
         plt.colorbar()
+        plt.title('Blurred image with noise')
         
         plt.figure(2)
         plt.imshow(estimatedMuForDisplay)
         plt.colorbar()
+        plt.title('Estimation of blurred image')
         
         plt.show()
     

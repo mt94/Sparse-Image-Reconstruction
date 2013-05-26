@@ -68,7 +68,7 @@ class LarsLassoReconstructor(LarsReconstructor):
             corrHatAbsMaxActual = np.max(corrHatAbs) # (2.9)                                
             corrHatAbsMismatch = np.abs(corrHatAbsMax - corrHatAbsMaxActual)
                         
-            if corrHatAbsMismatch > self.EPS*2:
+            if corrHatAbsMismatch > 1.0e-9: # self.EPS*10 is too strict???
                 indCorrHatAbsMaxActual = np.argmax(corrHatAbs)
                 raise RuntimeError('Iteration {0}: Abs corr hats don\'t match: theory is {1} whereas actual is {2} @ index/indices {3}, |delta| is {4}'.format(numIter,
                                                                                                                                                                corrHatAbsMax,

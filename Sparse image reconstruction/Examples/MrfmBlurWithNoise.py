@@ -13,6 +13,16 @@ class MrfmBlurWithNoise(AbstractExample):
     """
     Simulates 2d MRFM blur and optionally adds AWGN.
     """
+    
+    @staticmethod
+    def GetParameterOptimizer():
+        # Generate MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
+        opti = MrfmBlurParameterOptimizer(deltaB0=100)
+        opti.bUseSmallerR0 = True
+        opti.bUseSmallerB0 = False
+        opti.CalcOptimalValues(1e4, 6, R0=4)
+        return opti
+        
     def __init__(self, optimizer, simParametersDict):
         super(MrfmBlurWithNoise, self).__init__('MrfmBlur with additive Gaussian noise example')
         self._optimizer = optimizer
@@ -75,7 +85,7 @@ class MrfmBlurWithNoise(AbstractExample):
                             AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
                            }
                          )
-        print("Border width in image generator is {0}".format(igBorderWidth))
+#        print("Border width in image generator is {0}".format(igBorderWidth))
         
         ng = NoiseGeneratorFactory.GetNoiseGenerator('additive_gaussian')
         if (noiseSigma is not None) and (noiseSigma >= 0):
@@ -109,15 +119,9 @@ class MrfmBlurWithNoise(AbstractExample):
                     
         self.blurPsfInThetaFrame = mb.BlurPsfInThetaFrame      
                 
-if __name__ == "__main__":   
-    # Generate MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
-    opti = MrfmBlurParameterOptimizer(deltaB0=100)
-    opti.bUseSmallerR0 = True
-    opti.bUseSmallerB0 = False
-    opti.CalcOptimalValues(1e4, 6, R0=4)    
-    
+if __name__ == "__main__":           
     # Construct the example object
-    ex = MrfmBlurWithNoise(opti, 
+    ex = MrfmBlurWithNoise(MrfmBlurWithNoise.GetParameterOptimizer(), 
                            { 
                             AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20 
                             }
@@ -129,11 +133,7 @@ if __name__ == "__main__":
     blurredImageWithNoiseForDisplay = ex.channelChain \
                                         .channelBlocks[1] \
                                         .RemoveShiftFromBlurredImage(ex.blurredImageWithNoise)
-    plt.figure(1)
-    plt.imshow(ex.channelChain.intermediateOutput[0], interpolation='none')
-    plt.figure()
-    plt.imshow(ex.blurPsfInThetaFrame, interpolation='none')
-    plt.figure()
-    plt.imshow(blurredImageWithNoiseForDisplay, interpolation='none')
-    plt.colorbar()
+    plt.figure(1); plt.imshow(ex.channelChain.intermediateOutput[0], interpolation='none'); plt.colorbar();
+    plt.figure(); plt.imshow(ex.blurPsfInThetaFrame, interpolation='none'); plt.colorbar()
+    plt.figure(); plt.imshow(blurredImageWithNoiseForDisplay, interpolation='none'); plt.colorbar()
     plt.show()               

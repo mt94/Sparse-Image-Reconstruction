@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import pylab as plt
 from Blur import AbstractBlur
 
 class MrfmBlur(AbstractBlur):
@@ -162,7 +161,7 @@ class MrfmBlur(AbstractBlur):
         psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z) 
         if (self._blurType == MrfmBlur.BLUR_2D):
             psf2d = psf[:, :, 0]                
-            self._blurPsf = psf2d            
+            self._blurPsf = psf2d / np.max(psf2d.flat)
             # Find support of psf in the x and y plane             
             psfSupport = np.where(psf2d > 2*self._eps)
             self._psfSupport = psfSupport

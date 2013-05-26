@@ -53,6 +53,7 @@ class SyntheticBlur(AbstractBlur):
             self._blurShift = (nkHalf, nkHalf)
             
             self._blurPsf = SyntheticBlur.GaussianBlurSymmetric2d(fwhm, nkHalf)
+            self._blurPsf = self._blurPsf / np.max(self._blurPsf)
         else:
             raise NotImplementedError("SyntheticBlur type " + self._blurType + " hasn't been implemented")
                                                               

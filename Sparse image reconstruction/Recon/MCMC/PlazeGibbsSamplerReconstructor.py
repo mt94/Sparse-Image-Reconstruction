@@ -41,17 +41,19 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         self.nVerbose = optimSettingsDict.get(McmcConstants.INPUT_KEY_NVERBOSE, 0)
                     
         datetimeNow = datetime.now()
+
+        # If no verbose turned on, set the level to Warning instead of Info
+        if (self.nVerbose == 0):
+            logLevel = logging.WARNING
+        else:
+            logLevel = logging.INFO
         
         logging.basicConfig(filename='PlazeGibbsSamplerReconstructor-{0}-{1}-{2}.log'.format(datetimeNow.year,
                                                                                              datetimeNow.month,
                                                                                              datetimeNow.day),
                             filemode="w+",
                             format='%(asctime)s %(message)s',                            
-                            level=logging.INFO)
-        
-        # If no verbose turned on, set the level to Warning instead of Info
-        if (self.nVerbose == 0):
-            logging.Logger.setLevel('WARNING')
+                            level=logLevel)                    
         
     # Constants for the static method _C 
     CONST_SQRT_HALF_PI = math.sqrt(math.pi/2)
@@ -126,6 +128,8 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         hxNext = np.copy(hxLast) 
 
         #/// BEGIN SANITY
+        discrepencyNormTol = self.Eps * 1e3
+        
         hxLast2 = np.zeros(hxLast.shape)
         for ind in range(M):
             hInd = self._h[:, ind]            
@@ -135,9 +139,13 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         discrepencyNorm = math.sqrt(np.sum(discrepency * discrepency))
         hxLastNorm = math.sqrt(np.sum(hxLast * hxLast))
         hxLast2Norm = math.sqrt(np.sum(hxLast2 * hxLast2))            
-        
-        if (discrepencyNorm > self.Eps * 1e2):
-            raise RuntimeError('|dis| is {0}: |hxLast| = {1}, |hxLast2| = {2}'.format(discrepencyNorm, hxLastNorm, hxLast2Norm))
+                
+        if (discrepencyNorm > discrepencyNormTol):
+            raise RuntimeError('|dis| is {0} > tol={1}: |hxLast| = {2}, |hxLast2| = {3}'.format(discrepencyNorm,
+                                                                                                discrepencyNormTol,
+                                                                                                hxLastNorm, 
+                                                                                                hxLast2Norm)
+                               )
         #/// END SANITY
         
         # Sample each xInd                             

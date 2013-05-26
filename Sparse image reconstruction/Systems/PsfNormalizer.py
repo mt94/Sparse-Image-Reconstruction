@@ -41,7 +41,7 @@ class PsfMatrixNormNormalizer(AbstractPsfNormalizer):
     """ Compute the spectral radius of G(H) := H*H' """
     def GetSpectralRadiusGramMatrixRowsH(self):
         if self.psfColumnNormL2 is None:
-            raise UnboundLocalError('Cannot calculate the spectral radius of H*H\'')
+            raise UnboundLocalError("Cannot calculate the spectral radius of H*H'")
         else:
             assert self.psfColumnNormL2 > 0
             return self.psfColumnNormL2 * self.psfColumnNormL2

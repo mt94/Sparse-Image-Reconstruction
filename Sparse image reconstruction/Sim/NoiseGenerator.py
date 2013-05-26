@@ -62,5 +62,5 @@ class NoiseGeneratorFactory(object):
     @staticmethod
     def GetNoiseGenerator(noiseGeneratorDesc):
         if noiseGeneratorDesc not in NoiseGeneratorFactory._concreteNoiseGenerator:
-            raise NotImplementedError('NoiseGenerator ' + str(noiseGeneratorDesc) + ' isn\'t implemented' )
+            raise NotImplementedError("NoiseGenerator " + str(noiseGeneratorDesc) + " isn't implemented" )
         return NoiseGeneratorFactory._concreteNoiseGenerator[noiseGeneratorDesc]()        
