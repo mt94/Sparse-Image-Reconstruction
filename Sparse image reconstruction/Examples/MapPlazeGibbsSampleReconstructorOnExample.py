@@ -25,6 +25,9 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         self.snrDb = snrDb
         
     def RunExample(self):        
+        if (self.experimentObj is None):
+            raise NameError('experimentObj is undefined')
+        
         self.experimentObj.RunExample() 
                         
         xTrue = self.experimentObj.channelChain.intermediateOutput[0]        

@@ -24,13 +24,15 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         self.reconstructorDesc = reconstructorDesc
         self.iterObserver = iterObserver
         self.snrDb = snrDb
-        self.bRestoreSim = bRestoreSim
+        self.bRestoreSim = bRestoreSim 
 #        self.reconResult = None
 #        self.gbwn = None        
         
     def RunExample(self):
         
         if (not self.bRestoreSim):
+            if self.experimentObj is None:
+                raise NameError('experimentObj is undefined')                 
             self.experimentObj.RunExample()            
             pickle.dump(self.experimentObj, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))
         else:        

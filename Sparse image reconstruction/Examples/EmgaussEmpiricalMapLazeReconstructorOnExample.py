@@ -43,33 +43,41 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
         self._reconstructor = None
             
     def RunExample(self): 
+        if (self.experimentObj is None):
+            raise NameError('experimentObj is undefined')
+        
         # Run the experiment 
         self.experimentObj.RunExample()
-                
+
+        # Get the inputs needed for the reconstructor                
         y = self.experimentObj.blurredImageWithNoise
         psfRepH = self.experimentObj.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
         if (self.noiseSigma is None):
             self.noiseSigma = self.experimentObj.NoiseSigma
-        
+                             
+        # DEBUG
+#        plt.figure(1); plt.imshow(psfRepH); plt.colorbar()
+                
         emgIterationsObserver = EmgaussIterationsObserver({
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_COND: EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2,
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_TOL: 1e-7                                                
-                                                           }) 
+                                                           })
         
         # Create an object that will compute the spectral radius
-#        plt.figure(1); plt.imshow(psfRepH); plt.colorbar()
         gbNormalizer = PsfMatrixNormNormalizer(1)
-        gbNormalizer.NormalizePsf(psfRepH)        
-                
+        gbNormalizer.NormalizePsf(psfRepH)      
+        psfSpectralRadius = gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
+                        
         optimSettingsDict = \
         {
             AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 2e5,
             AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER: emgIterationsObserver,
-            AbstractEmgaussReconstructor.INPUT_KEY_TAU: 1 / gbNormalizer.GetSpectralRadiusGramMatrixRowsH(),
-            AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / np.sqrt(gbNormalizer.GetSpectralRadiusGramMatrixRowsH()),
+            AbstractEmgaussReconstructor.INPUT_KEY_TAU: 1 / psfSpectralRadius,
+            AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / np.sqrt(psfSpectralRadius),
             AbstractEmgaussReconstructor.INPUT_KEY_ESTIMATE_HYPERPARAMETERS_ITERATIONS_INTERVAL: 500
         }        
         
+        # Get the class constructor that we'd like to call
         clsReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample._concreteMapReconstructor[self.estimatorDesc]
         
         if self.estimatorDesc == 'map2':
@@ -87,43 +95,19 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
                                                                              .GetInitialEstimate(y, psfRepH) 
                                                       )
                                             
-        # Save results
-        self._y = y
-#        self.theta = gbwn.channelChain.intermediateOutput[0]                
-#        self.hyperparameter = reconstructor.Hyperparameter
+        # Save results        
         self._channelChain = self.experimentObj.channelChain
+        
+        self._theta = self._channelChain.intermediateOutput[0]
+        self._y = y                            
         self._reconstructor = reconstructor
-        
-    @property
-    def Theta(self):
-        if (self._channelChain is None):
-            raise NameError('Trying to access uninitialized field')
-        return self._channelChain.intermediateOutput[0]
-        
-    @property
-    def ThetaEstimated(self):
-        if (self._thetaEstimated is None):
-            raise NameError('Trying to access uninitialized field')
-        return self._thetaEstimated
-        
+                
     @property 
     def Hyperparameter(self):
         if (self._reconstructor is None):
             raise NameError('Trying to access uninitialized field')            
         return self._reconstructor.Hyperparameter
         
-    @property
-    def TerminationReason(self):
-        if (self._reconstructor is None):
-            raise NameError('Trying to access uninitialized field')
-        return self._reconstructor.TerminationReason            
-        
-    @property
-    def NoisyObs(self):
-        if (self._y is None):
-            raise NameError('Trying to access uninitialized field')    
-        return self._y
-
 def RunMap1(param):
     [snrDb, experimentDesc] = param
     exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample('map1', snrDb=snrDb)
