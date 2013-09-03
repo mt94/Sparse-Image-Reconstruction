@@ -31,7 +31,16 @@ class AbstractReconstructorExample(AbstractExample.AbstractExample):
     def ThetaEstimated(self):
         if (self._thetaEstimated is None):
             raise NameError('ThetaEstimated is uninitialized')
-        return self._thetaEstimated 
+        if (type(self._thetaEstimated) is tuple) or (type(self._thetaEstimated) is list):
+            if len(self._thetaEstimated) == 1:
+                return self._thetaEstimated[0]
+            elif len(self._thetaEstimated) == 2:
+                return self._thetaEstimated[0] * self._thetaEstimated[1]
+            else:
+                raise TypeError("Don't know how to calculate ThetaEstimated")
+        else:
+            # Assume that _thetaEstimated is a numpy array
+            return self._thetaEstimated 
     
     @property
     def TerminationReason(self):

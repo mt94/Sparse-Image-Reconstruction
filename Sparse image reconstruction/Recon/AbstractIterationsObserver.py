@@ -6,7 +6,7 @@ class AbstractIterationsObserver(object):
     def __init__(self):
         self._bRequireFitError = False
         
-    """ Return true if fitErrorN is required in UpdateEstimates """
+    """ Return true if fitErrorN is required in UpdateWithEstimates """
     @property
     def RequireFitError(self):
         return self._bRequireFitError
@@ -18,7 +18,7 @@ class AbstractIterationsObserver(object):
         
     """ Called each iteration to update observations """
     @abc.abstractmethod
-    def UpdateEstimates(self, thetaNp1, thetaN, fitErrorN):        
+    def UpdateWithEstimates(self, reconArgsNp1, reconArgsN, fitErrorN):        
         raise NotImplementedError('No default abstract method implementation')
     
     @abc.abstractmethod

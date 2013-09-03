@@ -29,10 +29,16 @@ class EmgaussIterationsObserver(AbstractIterationsObserver):
     def TerminateIterations(self):
         return self._bTerminate
                 
-    def UpdateEstimates(self, thetaNp1, thetaN, fitErrorN=None):
-        if (self.terminateCondition == EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2):
-#            if (np.linalg.norm(thetaNp1 - thetaN, 2) < self.terminateTolerance):
-            thetaDiff = np.reshape(thetaNp1 - thetaN, (thetaN.size,))            
+    def UpdateWithEstimates(self, reconArgsNp1, reconArgsN, fitErrorN=None):
+        if (self.terminateCondition == EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2):                    
+            if len(reconArgsN) == 1 and len(reconArgsN) == len(reconArgsNp1):
+                # If reconArgsN only has one element, take it to be theta
+                thetaDiff = np.reshape(reconArgsNp1[0] - reconArgsN[0], (reconArgsN[0].size,))
+            elif len(reconArgsN) == 2 and len(reconArgsN) == len(reconArgsNp1):
+                # If reconArgsN has two elements, assume that theta is the element-wise product of the two elementss
+                thetaDiff = np.reshape(reconArgsNp1[0]*reconArgsNp1[1] - reconArgsN[0]*reconArgsN[1], (reconArgsN[0].size,))
+            else:
+                raise TypeError('Method called with inappropriate arguments')
             if np.sqrt((thetaDiff*thetaDiff).sum()) < self.terminateTolerance:                
                 self._bTerminate = True
             else:

@@ -10,7 +10,7 @@ class EmgaussFixedMstepReconstructor(AbstractEmgaussReconstructor):
 
     """ Abstract methods implementation """
     def SetupBeforeIterations(self):
-        pass # Do nothing
+        assert len(self._reconArgs) == 1
             
     def Mstep(self, x, numIter):
-        return self.funcMstep(x)
+        return (self.funcMstep(x),)

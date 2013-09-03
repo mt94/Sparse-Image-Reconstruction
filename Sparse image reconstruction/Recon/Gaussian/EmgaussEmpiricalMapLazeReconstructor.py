@@ -3,15 +3,21 @@ import numpy as np
 from Recon.AbstractEstimateHyperparameter import AbstractEstimateHyperparameter
 from Recon.AbstractDynamicThresholding import AbstractDynamicThresholding
 from Recon.Gaussian.EmgaussEmpiricalMapReconstructor import EmgaussEmpiricalMapReconstructor
-from Systems.Thresholding import ThresholdingHybrid, ThresholdingSoft
+from Systems.Thresholding import ThresholdingHybrid, ThresholdingSoft, ThresholdingMap1CompositeSmallWeight, ThresholdingMap1CompositeLargeWeight
 
 class LazeMap1EstimateHyperparameter(AbstractEstimateHyperparameter):
     def __init__(self):
         super(LazeMap1EstimateHyperparameter, self).__init__()
-    def EstimateHyperparameter(self, thetaN):        
-        l0Norm = (thetaN != 0).sum()
-        l1Norm = np.abs(thetaN).sum()        
-        return (float(thetaN.size)/float(l1Norm), float(l0Norm)/float(thetaN.size))
+    def EstimateHyperparameter(self, args):       
+        # For the MAP1 algorithm, both thetaTildeN and nonzeroIndicatorN are used
+        if len(args) == 2: 
+            thetaTildeN = args[0]
+            nonzeroIndicatorN = args[1]
+            nonzeroIndicatorL0Norm = (nonzeroIndicatorN != 0).sum()
+            thetaTildeL1Norm = np.abs(thetaTildeN).sum()        
+            return (float(thetaTildeN.size)/float(thetaTildeL1Norm), float(nonzeroIndicatorL0Norm)/float(thetaTildeN.size))
+        else:
+            raise TypeError('Unexpected number of args to EstimateHyperparameter: ' + str(len(args)))
 
 class LazeMap1DynamicThresholding(AbstractDynamicThresholding):    
     def __init__(self):
@@ -20,12 +26,14 @@ class LazeMap1DynamicThresholding(AbstractDynamicThresholding):
         assert "alphaVal" in kwargs
         alpha = kwargs['alphaVal']
         (a, w) = hyperparameter # hyperparameter = (a,w)        
-        cTmp = a*alpha*alpha                
+        #cTmp = a*alpha*alpha                
         if (w <= 0.5):     
-            assert w > 0       
-            return ThresholdingHybrid(cTmp + alpha*np.sqrt(2*np.log((1-w)/w)), cTmp)            
+            #assert w > 0       
+            #return ThresholdingHybrid(cTmp + alpha*np.sqrt(2*np.log((1-w)/w)), cTmp)      
+            return ThresholdingMap1CompositeSmallWeight(a, w, alpha)     
         else:
-            return ThresholdingSoft(cTmp)                
+            #return ThresholdingSoft(cTmp)            
+            return ThresholdingMap1CompositeLargeWeight(a, w, alpha)         
 
 class EmgaussEmpiricalMapLaze1Reconstructor(EmgaussEmpiricalMapReconstructor):
     def __init__(self, optimSettingsDict):
@@ -39,18 +47,22 @@ class LazeMap2EstimateHyperparameter(AbstractEstimateHyperparameter):
         super(LazeMap2EstimateHyperparameter, self).__init__()
         self._r = r
         self._gSup = gSup        
-    def EstimateHyperparameter(self, thetaN):
-        l0Norm = (thetaN != 0).sum()
-        l1Norm = np.abs(thetaN).sum()
-        aHat = float(l0Norm)/float(l1Norm)
-        wHat = float(l0Norm)/float(thetaN.size)        
-        if (self._gSup is None):
-            # If gSup isn't specified, return _r
-            assert self._r is not None
-            return (aHat, wHat, self._r)
+    def EstimateHyperparameter(self, args):
+        if len(args) == 1:
+            reconArgsN = args[0]
+            l0Norm = (reconArgsN != 0).sum()
+            l1Norm = np.abs(reconArgsN).sum()
+            aHat = float(l0Norm)/float(l1Norm)
+            wHat = float(l0Norm)/float(reconArgsN.size)        
+            if (self._gSup is None):
+                # If gSup isn't specified, return _r
+                assert self._r is not None
+                return (aHat, wHat, self._r)
+            else:
+                # If gSup is specified, use that to calculate r
+                return (aHat, wHat, float(self._gSup)*2/float(aHat)*(1/float(wHat)-1))
         else:
-            # If gSup is specified, use that to calculate r
-            return (aHat, wHat, float(self._gSup)*2/float(aHat)*(1/float(wHat)-1))
+            raise TypeError('Unexpected number of args to EstimateHyperparameter: ' + str(len(args)))
 
 class LazeMap2DynamicThresholding(AbstractDynamicThresholding):
     def __init__(self):
@@ -62,9 +74,9 @@ class LazeMap2DynamicThresholding(AbstractDynamicThresholding):
         cTmp = a*alpha*alpha                
         assert r >= 0        
         if (r >= 1):            
-            return ThresholdingHybrid(cTmp + alpha*np.sqrt(2*np.log(r)), cTmp)            
+            return ThresholdingHybrid(cTmp + alpha*np.sqrt(2*np.log(r)), cTmp, bReturnTuple=True)            
         else:
-            return ThresholdingSoft(cTmp)                
+            return ThresholdingSoft(cTmp, bReturnTuple=True)                
         
 class EmgaussEmpiricalMapLaze2Reconstructor(EmgaussEmpiricalMapReconstructor):
     def __init__(self, optimSettingsDict, r, gSup):   

@@ -69,11 +69,12 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         clsThresholding = params[1]
         reconstructor = clsReconstructor(optimSettingsDict, clsThresholding().Apply)
         
+        # Index the first element, since the Estimate method returns a tuple
         self._thetaEstimated = reconstructor.Estimate(y,
                                                       ConvolutionMatrixUsingPsf(psfRepH),
                                                       InitialEstimatorFactory.GetInitialEstimator('Hty')
                                                                              .GetInitialEstimate(y, psfRepH) 
-                                                      )
+                                                      )[0]
                                             
         # Save results
         self._channelChain = self.experimentObj.channelChain
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     """        
     SNRDB = 20;
             
-#    mapResult = RunAlgo([SNRDB, 'gaussian', 'landweber'])
+#     mapResult = RunAlgo([SNRDB, 'gaussian', 'landweber'])
 
     pool = Pool(processes=2)
     resultPool = pool.map(RunAlgo, [[SNRDB, 'gaussian', 'landweber'], [SNRDB, 'gaussian', 'landweber_nonneg']])

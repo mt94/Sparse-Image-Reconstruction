@@ -17,7 +17,7 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
     Demonstrates Lars-based reconstructors
     """
     
-    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\\temp\\LeastAngleRegressionOnExampleGbwn.dump'
+    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\\tmp\\LeastAngleRegressionOnExampleGbwn.dump'
     
     def __init__(self, reconstructorDesc, iterObserver, snrDb=None, bRestoreSim=False):
         super(LarsReconstructorOnExample, self).__init__('LARS example')

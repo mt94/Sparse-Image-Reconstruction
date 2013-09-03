@@ -80,19 +80,22 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
         # Get the class constructor that we'd like to call
         clsReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample._concreteMapReconstructor[self.estimatorDesc]
         
+        initialEstimate = InitialEstimatorFactory.GetInitialEstimator('Hty').GetInitialEstimate(y, psfRepH)      
+        
         if self.estimatorDesc == 'map2':
-            # The MAP2 LAZE reconstructor ctor accepts  accepts optimSettingsDict and r
+            # The MAP2 LAZE reconstructor ctor accepts  accepts optimSettingsDict, r, and gSup
             assert self.r is not None
             assert self.gSup is not None
             reconstructor = clsReconstructor(optimSettingsDict, self.r, self.gSup)
+            estimateArg = (initialEstimate,)
         else:
             # By default, assume the ctor only accepts optimSettingsDict
             reconstructor = clsReconstructor(optimSettingsDict)
-                    
+            estimateArg = (initialEstimate, (initialEstimate != 0)*1)
+                                                                                                        
         self._thetaEstimated = reconstructor.Estimate(y,
                                                       ConvolutionMatrixUsingPsf(psfRepH),
-                                                      InitialEstimatorFactory.GetInitialEstimator('Hty')
-                                                                             .GetInitialEstimate(y, psfRepH) 
+                                                      *estimateArg
                                                       )
                                             
         # Save results        
@@ -160,7 +163,7 @@ if __name__ == "__main__":
     GSUP = 1/np.sqrt(2)
     BLURDESC = 'gaussian'
     
-    mapDesc = 'map1'
+    mapDesc = 'map2'
     bRunPool = True
         
     if not bRunPool:

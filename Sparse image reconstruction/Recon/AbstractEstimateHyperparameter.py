@@ -7,5 +7,5 @@ class AbstractEstimateHyperparameter(object):
         super(AbstractEstimateHyperparameter, self).__init__()
         
     @abc.abstractmethod
-    def EstimateHyperparameter(self, thetaN):
-        raise NotImplementedError('No default abstract method implemented')
+    def EstimateHyperparameter(self, args):
+        raise NotImplementedError('No default abstract method implemented')    

@@ -19,7 +19,7 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         assert optimSettingsDict is not None
         self._optimSettingsDict = optimSettingsDict        
         self._terminationReason = None
-        self._thetaN = None            
+        self._reconArgs = None        
     
     @property
     def TerminationReason(self):
@@ -31,16 +31,22 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
     
     @abc.abstractmethod
     def Mstep(self, x, numIter):
-        pass
+        pass        
         
     """ y and theta0 are NumPy matrices of the same shape. """
-    def EstimateUsingFft(self, y, convMatrixObj, theta0):
-#        assert (y.shape == psfRepH.shape) and (y.shape == theta0.shape)
+    def EstimateUsingFft(self, y, convMatrixObj, *args):
+
+        assert ((len(args) == 1) or (len(args) == 2))
         assert isinstance(convMatrixObj, AbstractConvolutionMatrix)
-        assert (y.shape == convMatrixObj.PsfShape) and (y.shape == theta0.shape)        
+        
+        assert (y.shape == convMatrixObj.PsfShape)
+        assert (y.shape == args[0].shape)
+        
+        if (len(args) == 2):        
+            assert (y.shape == args[1].shape)   
                                                     
         # Get the starting point theta0
-        self._thetaN = theta0
+        self._reconArgs = args
         
         maxIter = self._optimSettingsDict.get(AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS, 500)
         tau = self._optimSettingsDict.get(AbstractEmgaussReconstructor.INPUT_KEY_TAU, 1)
@@ -49,39 +55,39 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
         assert AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER in self._optimSettingsDict   
         iterObserver = self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER]
         assert isinstance(iterObserver, AbstractIterationsObserver)
-        
-#        if iterObserver.RequireFitError == False:
-#            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN)
-#        else:            
-#            fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateObservations(tNp1, tN, feN)
 
-        fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateEstimates(tNp1, tN, feN)
+        fnUpdateIterObserver = lambda tNp1, tN, feN: iterObserver.UpdateWithEstimates(tNp1, tN, feN)
         
         # Do any initialization
         self.SetupBeforeIterations()
-                        
+                               
+        numIter = 0
+        
         # Run through the EM iterations
-        numIter = 0;
         while numIter < maxIter:
-            fitErrorN = y - convMatrixObj.Multiply(self._thetaN)
+            if (len(self._reconArgs) == 2):
+                thetaN = self._reconArgs[0] * self._reconArgs[1]
+            else:
+                thetaN = self._reconArgs[0]
+            fitErrorN = y - convMatrixObj.Multiply(thetaN)
             correction = convMatrixObj.MultiplyPrime(fitErrorN)
-            thetaNp1 = self.Mstep(self._thetaN + tau * correction, numIter)
-            fnUpdateIterObserver(thetaNp1, self._thetaN, fitErrorN)        
+            reconArgsNext = self.Mstep(thetaN + tau * correction, numIter)
+            fnUpdateIterObserver(reconArgsNext, self._reconArgs, fitErrorN)        
             if iterObserver.TerminateIterations:                
                 self._terminationReason = 'Iterations observer, terminating after ' + str(numIter) + ' iterations'
                 break
             numIter += 1
-            self._thetaN = thetaNp1
+            self._reconArgs = reconArgsNext
             
         if numIter == maxIter:
             self._terminationReason = 'Max iterations reached'
             
-        return self._thetaN
+        return self._reconArgs
        
     # Abstract method override
-    def Estimate(self, y, psfRepH, theta0):
+    def Estimate(self, y, psfRepH, *args):
         # Only support the FFT method for now
-        return self.EstimateUsingFft(y, psfRepH, theta0)
+        return self.EstimateUsingFft(y, psfRepH, *args)
         
         
         
