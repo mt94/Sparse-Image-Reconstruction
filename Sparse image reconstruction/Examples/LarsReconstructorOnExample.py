@@ -17,7 +17,7 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
     Demonstrates Lars-based reconstructors
     """
     
-    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = 'c:\\tmp\\LeastAngleRegressionOnExampleGbwn.dump'
+    GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = ''; #'c:\\tmp\\LeastAngleRegressionOnExampleGbwn.dump'
     
     def __init__(self, reconstructorDesc, iterObserver, snrDb=None, bRestoreSim=False):
         super(LarsReconstructorOnExample, self).__init__('LARS example')
@@ -33,10 +33,15 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         if (not self.bRestoreSim):
             if self.experimentObj is None:
                 raise NameError('experimentObj is undefined')                 
-            self.experimentObj.RunExample()            
-            pickle.dump(self.experimentObj, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))
+            self.experimentObj.RunExample()      
+            if LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE:      
+                pickle.dump(self.experimentObj, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))
         else:        
-            self.experimentObj = pickle.load(open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'rb'))    
+            if LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE:
+                self.experimentObj = pickle.load(open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'rb')) 
+            else:
+                # There's a mistake here
+                raise NameError("Cannot restore object when dump filename isn't defined")
                                 
         y = self.experimentObj.blurredImageWithNoise
         psfRepH = self.experimentObj.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
