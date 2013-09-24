@@ -1,5 +1,5 @@
 from ChannelBlock import AbstractChannelBlock
-from Sim.ImageGenerator import AbstractImageGenerator
+from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.Blur import AbstractBlur
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 

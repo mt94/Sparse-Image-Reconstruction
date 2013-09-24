@@ -8,8 +8,30 @@ class MrfmBlur(AbstractBlur):
     """   
     @staticmethod
     def GetXyzMeshFor2d(xSpan, z0, numPoints):
+        """
+        Return a mesh for the 2d MRFM blur. The number of points in the x and y dimensions
+        are equal and covers -xSpan to xSpan, while the z dimension is singleton with value z0.        
+        """
         meshDelta = 2.0 * xSpan / (numPoints - 1.0)
-        xyzMesh = np.mgrid[-xSpan:(xSpan + 0.1*meshDelta):meshDelta, -xSpan:(xSpan + 0.1*meshDelta):meshDelta, z0:(z0 + .09):.1]
+        someEpsilon = 0.1
+        xyzMesh = np.mgrid[-xSpan:(xSpan + someEpsilon * meshDelta):meshDelta,
+                           -xSpan:(xSpan + someEpsilon * meshDelta):meshDelta,
+                           z0:(z0 + someEpsilon):(.9 * someEpsilon)]
+        return xyzMesh
+    
+    @staticmethod
+    def GetXyzMeshFor3d(xSpan, z0, zMax, numPoints):        
+        """
+        Return a mesh for the 3d MRFM blur. The x and y dimensions cover [-xSpan, xSpan], while 
+        the z dimension covers from z0 to zMax. The tuple numPoints is of length 3.                
+        """        
+        if len(numPoints) != 3:
+            raise ValueError('numPoints is expected to have length 3')
+        meshDelta = np.array((2.0 * xSpan, 2.0 * xSpan, zMax - z0)) / (np.array(numPoints) - 1.0)
+        someEpsilon = 0.1
+        xyzMesh = np.mgrid[-xSpan:(xSpan + someEpsilon * meshDelta[0]):meshDelta[0],
+                           -xSpan:(xSpan + someEpsilon * meshDelta[1]):meshDelta[1],
+                           z0:(zMax + someEpsilon * meshDelta[2]):meshDelta[2]]
         return xyzMesh
              
     @staticmethod
@@ -107,6 +129,7 @@ class MrfmBlur(AbstractBlur):
     
     # 2-d blur    
     BLUR_2D = 1    
+    BLUR_3D = 2
                         
     def __init__(self, blurType, blurParametersDict):
         super(MrfmBlur, self).__init__()
@@ -130,8 +153,9 @@ class MrfmBlur(AbstractBlur):
         self._blurShift = None
         self._psfSupport = None
         
-        if (blurType == MrfmBlur.BLUR_2D):
+        if ((blurType == MrfmBlur.BLUR_2D) or (blurType == MrfmBlur.BLUR_3D)):
             if ((self.X is not None) and (self.Y is not None) and (self.Z is not None)):
+                # If the mesh is defined when the object is initialized, get the blur psf right away
                 self._GetBlurPsf()           
         else:
             raise NotImplementedError("MrfmBlur type " + self._blurType + " hasn't been implemented")        
@@ -158,32 +182,46 @@ class MrfmBlur(AbstractBlur):
     def _GetBlurPsf(self):
         if ((self.X is None) or (self.Y is None) or (self.Z is None)):
             raise UnboundLocalError('Cannot get psf since mesh definition is undefined')
-        psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z) 
-        if (self._blurType == MrfmBlur.BLUR_2D):
-            psf2d = psf[:, :, 0]                
-            self._blurPsf = psf2d / np.max(psf2d.flat)
-            # Find support of psf in the x and y plane             
-            psfSupport = np.where(psf2d > 2*self._eps)
-            self._psfSupport = psfSupport
-            # The blur shift is half of the max support in both x and y
-            blurShiftInXDir = min(psfSupport[0]) + math.floor((max(psfSupport[0]) - min(psfSupport[0])) / 2)
-            blurShiftInYDir = min(psfSupport[1]) + math.floor((max(psfSupport[1]) - min(psfSupport[1])) / 2)            
-            self._blurShift = (blurShiftInXDir, blurShiftInYDir)       
         
-    def BlurImage(self, theta):       
+        psf = MrfmBlur.GetPsfVerticalCantilever(self.m, self.Bext, self.Bres, self.xPk, self.X, self.Y, self.Z)
+         
         if (self._blurType == MrfmBlur.BLUR_2D):
-            self._thetaShape = theta.shape
-            if len(self._thetaShape) != 2:
-                raise ValueError('BLUR_2D requires theta to be 2-d')
-            
-            if (self._blurPsf is None):
-                self._GetBlurPsf()
-            if (not np.all(self._thetaShape >= self._blurPsf.shape)):
-                raise ValueError("theta's shape: " + str(self._thetaShape) + 
-                                 " must be at least as big as the blur's shape: " + str(self._blurPsf.shape)
-                                 )            
-                                                           
-            y = np.fft.ifft2(np.multiply(np.fft.fft2(self.BlurPsfInThetaFrame), np.fft.fft2(theta)))
-            return y.real                        
+            psf = psf[:, :, 0]; # Reduce 3d to 2d array                          
+            # Find support of psf in the x and y plane             
+            psfSupport = np.where(psf > 2*self._eps)            
+            # The blur shift is half of the max support in both x and y
+            blurShift = [0, 0]; # Init
+        elif (self._blurType == MrfmBlur.BLUR_3D):
+            psfSupport = np.where(psf > 2*self._eps)
+            blurShift = [0, 0, 0]
         else:
             raise NotImplementedError("MrfmBlur type " + self._blurType + " hasn't been implemented")
+        
+        self._blurPsf = psf / np.max(psf.flat)
+        self._psfSupport = psfSupport
+        for dimInd in range(len(blurShift)):
+            blurShift[dimInd] = min(psfSupport[dimInd]) + math.floor((max(psfSupport[dimInd]) - min(psfSupport[dimInd])) / 2)                                   
+        self._blurShift = tuple(blurShift)
+        
+    def BlurImage(self, theta):               
+        self._thetaShape = theta.shape
+        
+        if (self._blurPsf is None):
+            self._GetBlurPsf()
+         
+        if (len(self._thetaShape) != len(self._blurPsf.shape)):
+            raise ValueError("Mismatch in theta's shape vs. the psf's shape")
+        
+        if (not np.all(self._thetaShape >= self._blurPsf.shape)):
+            raise ValueError("theta's shape: " + str(self._thetaShape) + 
+                             " must be at least as big as the blur's shape: " + str(self._blurPsf.shape)
+                             ) 
+                                
+        if (self._blurType == MrfmBlur.BLUR_2D):                                                                   
+            y = np.fft.ifft2(np.multiply(np.fft.fft2(self.BlurPsfInThetaFrame), np.fft.fft2(theta)))            
+        elif (self._blurType == MrfmBlur.BLUR_3D):
+            y = np.fft.ifftn(np.multiply(np.fft.fftn(self.BlurPsfInThetaFrame), np.fft.fftn(theta)))
+        # Since _blurType was checked in __init__, there's no need to have an else to handle unimplemented
+        # values.
+        
+        return y.real; # Discard the complex part

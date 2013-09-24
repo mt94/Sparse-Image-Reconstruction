@@ -3,16 +3,17 @@ import pylab as plt
 from Channel.ChannelProcessingChain import ChannelProcessingChain
 from AbstractExample import AbstractExample
 from Sim.SyntheticBlur import SyntheticBlur
-from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory 
+from Sim.AbstractImageGenerator import AbstractImageGenerator
+from Sim.ImageGeneratorFactory import ImageGeneratorFactory
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
-class GaussianBlurWithNoise(AbstractExample):
+class Gaussian2dBlurWithNoise(AbstractExample):
     """
     Simulates 2d Gaussian blur and optionally adds AWGN.
     """
     def __init__(self, simParametersDict):
-        super(GaussianBlurWithNoise, self).__init__('Gaussian SyntheticBlur with additive Gaussian noise example')
+        super(Gaussian2dBlurWithNoise, self).__init__('Gaussian SyntheticBlur with additive Gaussian noise example')
         self._simParametersDict = simParametersDict
         self.blurredImageWithNoise = None
         self.channelChain = None
@@ -102,7 +103,7 @@ class GaussianBlurWithNoise(AbstractExample):
         
     
 if __name__ == "__main__":    
-    ex = GaussianBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20})
+    ex = Gaussian2dBlurWithNoise({AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20})
     ex.RunExample()
     
     """ Calculate the spectral radius of H*H^T. Must do this after running the chain,

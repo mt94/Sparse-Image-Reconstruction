@@ -46,7 +46,7 @@ class MrfmBlurParameterOptimizer(object):
       
         # Used for CalcOptimalValues  
         self.bUseSmallerR0 = True
-        self.bUseSmallerB0 = True
+        self.bUseSmallerDeltaB0 = True
         
         # The parameter deltaB0, if present, specifies the "normal" deltaB0 
         if (deltaB0 is None):
@@ -77,7 +77,7 @@ class MrfmBlurParameterOptimizer(object):
         self.xOpt = self.OPTIMAL_X_FACTOR*self.z0                
         self.GMax = self.OPTIMAL_G_FACTOR * self.m / (self.z0 ** 4)
         
-        if (self.bUseSmallerB0):
+        if (self.bUseSmallerDeltaB0):
             deltaB0 = min(self._deltaB0Values)
         else:
             deltaB0 = max(self._deltaB0Values)

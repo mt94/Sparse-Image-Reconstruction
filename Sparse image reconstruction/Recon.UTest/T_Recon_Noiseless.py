@@ -3,7 +3,6 @@ import numpy as np
 import cProfile
 import pylab as plt
 
-#from Channel.ChannelProcessingChain import ChannelProcessingChain
 from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
 from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
@@ -11,8 +10,6 @@ from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.Gaussian.Thresholding import ThresholdingIdentity
 from Recon.NormMinimizer.L2NormMinimizer import L2NormDirectMinimizerReconstructor
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
-#from Sim.Blur import Blur
-#from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 

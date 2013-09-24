@@ -101,12 +101,10 @@ if __name__ == '__main__':
     Run a comparison between standard Landweber iterations and iterations
     with a non-negative thresholding operation.
     """        
-    SNRDB = 20;
-            
-#     mapResult = RunAlgo([SNRDB, 'gaussian', 'landweber'])
+    SNRDB = 20;        
 
     pool = Pool(processes=2)
-    resultPool = pool.map(RunAlgo, [[SNRDB, 'gaussian', 'landweber'], [SNRDB, 'gaussian', 'landweber_nonneg']])
+    resultPool = pool.map(RunAlgo, [[SNRDB, 'gaussian2d', 'landweber'], [SNRDB, 'gaussian2d', 'landweber_nonneg']])
     for aResult in resultPool:
         print("{0}: l2 norm recon err={1}. {2}".format(
                                                        aResult['estimator'],                                                       

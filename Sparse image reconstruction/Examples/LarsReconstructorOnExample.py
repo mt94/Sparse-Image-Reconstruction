@@ -4,7 +4,6 @@ import pylab as plt
 
 from AbstractReconstructorExample import AbstractReconstructorExample
 from BlurWithNoiseFactory import BlurWithNoiseFactory
-#from GaussianBlurWithNoise import GaussianBlurWithNoise
 from Recon.Stagewise.LarsConstants import LarsConstants
 from Recon.Stagewise.LarsIterationEvaluator import LarsIterationEvaluator
 from Recon.Stagewise.LarsReconstructorFactory import LarsReconstructorFactory
@@ -81,7 +80,7 @@ if __name__ == "__main__":
         iterObserver.TrackCriterionL1Sure = True
             
     ex = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, snrDb=20, bRestoreSim=False) # Use bRestoreSim for debugging problem cases
-    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise('mrfm', 
+    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise('mrfm2d', 
                                                              {AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: ex.snrDb}
                                                              )
     ex.RunExample()

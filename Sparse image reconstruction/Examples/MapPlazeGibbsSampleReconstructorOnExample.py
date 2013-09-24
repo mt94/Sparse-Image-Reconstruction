@@ -88,7 +88,7 @@ if __name__ == "__main__":
                                            #np.arange(1000)
                                            )
     ex = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, 20)
-    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise('mrfm', 
+    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise('mrfm2d', 
                                                              {AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: ex.snrDb}
                                                              )
     

@@ -4,12 +4,13 @@ import pylab as plt
 
 from Channel.ChannelProcessingChain import ChannelProcessingChain
 from AbstractExample import AbstractExample
+from Sim.AbstractImageGenerator import AbstractImageGenerator
+from Sim.ImageGeneratorFactory import ImageGeneratorFactory 
 from Sim.MrfmBlur import MrfmBlur
 from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
-from Sim.ImageGenerator import AbstractImageGenerator, ImageGeneratorFactory 
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
 
-class MrfmBlurWithNoise(AbstractExample):
+class Mrfm2dBlurWithNoise(AbstractExample):
     """
     Simulates 2d MRFM blur and optionally adds AWGN.
     """
@@ -19,12 +20,12 @@ class MrfmBlurWithNoise(AbstractExample):
         # Generate MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
         opti = MrfmBlurParameterOptimizer(deltaB0=100)
         opti.bUseSmallerR0 = True
-        opti.bUseSmallerB0 = False
+        opti.bUseSmallerDeltaB0 = False
         opti.CalcOptimalValues(1e4, 6, R0=4)
         return opti
         
     def __init__(self, optimizer, simParametersDict):
-        super(MrfmBlurWithNoise, self).__init__('MrfmBlur with additive Gaussian noise example')
+        super(Mrfm2dBlurWithNoise, self).__init__('MrfmBlur with additive Gaussian noise example')
         self._optimizer = optimizer
         self._simParametersDict = simParametersDict
         self.blurredImageWithNoise = None
@@ -101,9 +102,9 @@ class MrfmBlurWithNoise(AbstractExample):
         else:
             raise NameError('noiseSigma or snrDb must be set') 
         
-        channelChain.channelBlocks.append(ig)                               
-        channelChain.channelBlocks.append(mb)            
-        channelChain.channelBlocks.append(ng)       
+        channelChain.channelBlocks.append(ig); # image generator                        
+        channelChain.channelBlocks.append(mb); # MRFM blur
+        channelChain.channelBlocks.append(ng); # noise generator
         
         # Run
         self.channelChain = channelChain
@@ -121,11 +122,11 @@ class MrfmBlurWithNoise(AbstractExample):
                 
 if __name__ == "__main__":           
     # Construct the example object
-    ex = MrfmBlurWithNoise(MrfmBlurWithNoise.GetParameterOptimizer(), 
-                           { 
-                            AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20 
-                            }
-                           )
+    ex = Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetParameterOptimizer(), 
+                             { 
+                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20 
+                              }
+                             )
     ex.RunExample()
        
     # In order to remove the shift, must access the SyntheticBlur block in the channel chain

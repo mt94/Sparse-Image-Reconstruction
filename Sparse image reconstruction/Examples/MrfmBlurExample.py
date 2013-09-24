@@ -1,58 +1,90 @@
 import pylab as plt
 from AbstractExample import AbstractExample
+from Sim.BmagLevelSurface import BmagLevelSurface
 from Sim.MrfmBlur import MrfmBlur
 from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
 
 class MrfmBlurExample(AbstractExample):
-    def __init__(self, opti, numPointsInXyMesh, fignum):
-        super(MrfmBlurExample,self).__init__('MrfmBlur example')
+    def __init__(self, opti, numPointsInMesh, fignum, blurType, blurDesc=None):
+        super(MrfmBlurExample,self).__init__('MrfmBlur example: ' + str(blurDesc))
         self._opti = opti
-        self._numPointsInXyMesh = numPointsInXyMesh
+        assert (len(numPointsInMesh) == 1) or (len(numPointsInMesh) == 2)
+        self._numPointsInMesh = numPointsInMesh
         self._fignum = fignum
-        
+        self._blurType = blurType
+    
+    def _Plot(self, mrfmBlurObj):
+        if (self._blurType == MrfmBlur.BLUR_2D): 
+            plt.figure(self._fignum)
+            plt.imshow(mrfmBlurObj.BlurPsf, interpolation='none')        
+            plt.xlabel('x'), plt.ylabel('y'), plt.colorbar() 
+            plt.title(self.exampleDesc)
+        else:
+            # 3-d blur
+            blurPsfShape = mrfmBlurObj.BlurPsf.shape
+            for zInd in range(blurPsfShape[2]):
+                plt.figure(self._fignum + zInd)
+                plt.imshow(mrfmBlurObj.BlurPsf[:, :, zInd], interpolation='none')        
+                plt.xlabel('x'), plt.ylabel('y'), plt.colorbar()                
+                plt.title(self.exampleDesc + ": slice " + str(zInd + 1))             
+                    
     """ Abstract method override """                
-    def RunExample(self):        
-        # Use numpy.mgrid to generate 3-d grid mesh
-        xyzMesh = MrfmBlur.GetXyzMeshFor2d(self._opti.xSpan, 
-                                           self._opti.z0, 
-                                           self._numPointsInXyMesh
-                                           ) 
-        # Create the MRFM blur      
-        mb = MrfmBlur(MrfmBlur.BLUR_2D, 
-                      {
-                        MrfmBlur.INPUT_KEY_BEXT: self._opti.Bext,
-                        MrfmBlur.INPUT_KEY_BRES: self._opti.Bres,
-                        MrfmBlur.INPUT_KEY_SMALL_M: self._opti.m,
-                        MrfmBlur.INPUT_KEY_XPK: self._opti.xPk,
-                        MrfmBlur.INPUT_KEY_XMESH: xyzMesh[1],                                                 
-                        MrfmBlur.INPUT_KEY_YMESH: xyzMesh[0],
-                        MrfmBlur.INPUT_KEY_ZMESH: xyzMesh[2]
-                       }               
-                      )
+    def RunExample(self):     
+        # Generate the mesh 
+        if (self._blurType == MrfmBlur.BLUR_2D):       
+            assert len(self._numPointsInMesh) == 1 
+            xyzMesh = MrfmBlur.GetXyzMeshFor2d(self._opti.xSpan, 
+                                               self._opti.z0, 
+                                               self._numPointsInMesh[0]
+                                               ) 
+        elif (self._blurType == MrfmBlur.BLUR_3D):
+            assert len(self._numPointsInMesh) == 2; # The #pts in the x and y dimensions are the same
+            bmLevelSurface = BmagLevelSurface(self._opti.Bext, self._opti.Bres ** 2.0, self._opti.m)
+            xyzMesh = MrfmBlur.GetXyzMeshFor3d(self._opti.xSpan, 
+                                               self._opti.z0, 
+                                               bmLevelSurface.GetSupport['zSupport'][1],
+                                               (self._numPointsInMesh[0], self._numPointsInMesh[0], self._numPointsInMesh[1])
+                                               )
+        else:
+            raise NotImplementedError()
         
+        blurParametersDict = {
+                              MrfmBlur.INPUT_KEY_BEXT: self._opti.Bext,
+                              MrfmBlur.INPUT_KEY_BRES: self._opti.Bres,
+                              MrfmBlur.INPUT_KEY_SMALL_M: self._opti.m,
+                              MrfmBlur.INPUT_KEY_XPK: self._opti.xPk,
+                              MrfmBlur.INPUT_KEY_XMESH: xyzMesh[1],
+                              MrfmBlur.INPUT_KEY_YMESH: xyzMesh[0],
+                              MrfmBlur.INPUT_KEY_ZMESH: xyzMesh[2]
+                              }
+        
+        # Create the MRFM blur      
+        mb = MrfmBlur(self._blurType, blurParametersDict)        
         mb._GetBlurPsf()
         
-        plt.figure(self._fignum)
-        plt.imshow(mb.BlurPsf, interpolation='none')        
-        plt.xlabel('x'), plt.ylabel('y')
-        plt.colorbar()        
-        print("Psf has size: " + str(mb.BlurPsf.shape))
+        self._Plot(mb)              
+        print(self.exampleDesc + ": psf has size: " + str(mb.BlurPsf.shape))
         
 if __name__ == "__main__":
-    # Generate MRFM psf used in 04/s/psf_sim_sing.m
+    # Generate 2-d MRFM psf used in 04/s/psf_sim_sing.m
+    example1Desc = '2d MRFM psf used in psf_sim_sing.m'
     opti = MrfmBlurParameterOptimizer()
     opti.CalcOptimalValues(3e4, 3)       
-    ex = MrfmBlurExample(opti, 100, 1)
-    ex.RunExample()
-    plt.title('MRFM psf used in psf_sim_sing.m')
+    MrfmBlurExample(opti, (100,), 1, MrfmBlur.BLUR_2D, example1Desc).RunExample()  
     
-    # Generate MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
-    opti = MrfmBlurParameterOptimizer(deltaB0=100)
-    opti.bUseSmallerR0 = True
-    opti.bUseSmallerB0 = False
+    # Generate 2-d MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
+    example2Desc = '2d MRFM psf used in sp_img_recon.m'
+    opti = MrfmBlurParameterOptimizer(deltaB0=100) 
+    opti.bUseSmallerDeltaB0 = False;    # Use deltaB0 <- 100
     opti.CalcOptimalValues(1e4, 6, R0=4)
-    ex = MrfmBlurExample(opti, 32, 2)
-    ex.RunExample()
-    plt.title('MRFM psf used in sp_img_recon.m')
+    MrfmBlurExample(opti, (32,), 2, MrfmBlur.BLUR_2D, example2Desc).RunExample()    
             
+    # Generate 3-d MRFM psf
+    example3Desc = '3d MRFM psf used in pdb_sstart_psf.m'
+    opti = MrfmBlurParameterOptimizer(deltaB0=100)
+    opti.bUseSmallerDeltaB0 = False;    # Use delta B0 <- 100
+    opti.CalcOptimalValues(1e4, 3)
+    MrfmBlurExample(opti, (32, 8), 3, MrfmBlur.BLUR_3D, example3Desc).RunExample()    
+        
+    # Call show to display the plots99
     plt.show()        

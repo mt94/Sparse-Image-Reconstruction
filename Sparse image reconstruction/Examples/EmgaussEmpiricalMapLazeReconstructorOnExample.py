@@ -161,7 +161,7 @@ def RunMap2(param):
 if __name__ == "__main__":
     SNRDB = 20;
     GSUP = 1/np.sqrt(2)
-    BLURDESC = 'gaussian'
+    BLURDESC = 'gaussian2d'
     
     mapDesc = 'map2'
     bRunPool = True
