@@ -20,7 +20,7 @@ class AbstractImageGenerator(chb.AbstractChannelBlock):
         assert AbstractImageGenerator.INPUT_KEY_NUM_NONZERO in kwargs
         
         self.imageShape = kwargs[AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE]
-        assert len(self.imageShape) == 2        
+        assert (len(self.imageShape) == 2) or (len(self.imageShape) == 3)        
         
         # Assume that we want less than half the image as ones
         self.numNonzero = kwargs[AbstractImageGenerator.INPUT_KEY_NUM_NONZERO]
@@ -29,7 +29,8 @@ class AbstractImageGenerator(chb.AbstractChannelBlock):
         # Look for optional keys
         if AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH in kwargs:
             self.borderWidth = kwargs[AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH]
-            assert self.borderWidth >= 0
+            # Don't do an assert here -- let border width be a tuple, for ex.
+            #assert self.borderWidth >= 0
                 
     @abc.abstractmethod
     def Generate(self):

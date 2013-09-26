@@ -11,6 +11,6 @@ class BlurWithNoiseFactory(object):
         if blurWithNoiseDesc not in BlurWithNoiseFactory._concreteBlurWithNoise:
             raise NotImplementedError('BlurWithNoise ' + str(blurWithNoiseDesc) + " isn't implemented")
         if (blurWithNoiseDesc == 'mrfm2d'):
-            return Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetParameterOptimizer(), simParametersDict)
+            return Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetBlurParameterOptimizer(), simParametersDict)
         else:
             return BlurWithNoiseFactory._concreteBlurWithNoise[blurWithNoiseDesc](simParametersDict)

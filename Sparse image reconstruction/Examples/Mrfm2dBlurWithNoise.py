@@ -2,21 +2,20 @@ import math
 import numpy as np
 import pylab as plt
 
-from Channel.ChannelProcessingChain import ChannelProcessingChain
-from AbstractExample import AbstractExample
+from AbstractBlurWithNoise import AbstractBlurWithNoise
+from MrfmBlurExample import MrfmBlurExample
 from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.ImageGeneratorFactory import ImageGeneratorFactory 
 from Sim.MrfmBlur import MrfmBlur
 from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 
-class Mrfm2dBlurWithNoise(AbstractExample):
+class Mrfm2dBlurWithNoise(AbstractBlurWithNoise):
     """
     Simulates 2d MRFM blur and optionally adds AWGN.
-    """
-    
+    """    
     @staticmethod
-    def GetParameterOptimizer():
+    def GetBlurParameterOptimizer():
         # Generate MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
         opti = MrfmBlurParameterOptimizer(deltaB0=100)
         opti.bUseSmallerR0 = True
@@ -25,116 +24,60 @@ class Mrfm2dBlurWithNoise(AbstractExample):
         return opti
         
     def __init__(self, optimizer, simParametersDict):
-        super(Mrfm2dBlurWithNoise, self).__init__('MrfmBlur with additive Gaussian noise example')
-        self._optimizer = optimizer
-        self._simParametersDict = simParametersDict
-        self.blurredImageWithNoise = None
-        self.channelChain = None
-        self.blurPsfInThetaFrame = None      
-                
-    @property
-    def NoiseSigma(self):
-        return self._simParametersDict.get(AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA)
-
-    @property
-    def SnrDb(self):
-        return self._simParametersDict.get(AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB)
-    
-    """ Abstract method override """                
-    def RunExample(self): 
-        try:
-            numNonzero = self._simParametersDict[AbstractImageGenerator.INPUT_KEY_NUM_NONZERO]
-        except KeyError:
-            numNonzero = 8
-                    
-        try:
-            imageShape = self._simParametersDict[AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE]
-        except KeyError:
-            imageShape = (42, 42)
-
-        noiseSigma = self.NoiseSigma            
-        snrDb = self.SnrDb
-
-        # Use numpy.mgrid to generate 3-d grid mesh          
-        xyzMesh = MrfmBlur.GetXyzMeshFor2d(self._optimizer.xSpan, 
-                                           self._optimizer.z0, 
-                                           np.min([32, imageShape[0]])
-                                           )
-                    
-        # Create the MRFM blur      
-        mb = MrfmBlur(MrfmBlur.BLUR_2D, 
-                      {
-                       MrfmBlur.INPUT_KEY_BEXT: self._optimizer.Bext,
-                       MrfmBlur.INPUT_KEY_BRES: self._optimizer.Bres,
-                       MrfmBlur.INPUT_KEY_SMALL_M: self._optimizer.m,
-                       MrfmBlur.INPUT_KEY_XPK: self._optimizer.xPk,
-                       MrfmBlur.INPUT_KEY_XMESH: np.array(xyzMesh[1], dtype=float),                                                 
-                       MrfmBlur.INPUT_KEY_YMESH: np.array(xyzMesh[0], dtype=float),
-                       MrfmBlur.INPUT_KEY_ZMESH: np.array(xyzMesh[2], dtype=float)
-                       }
-                      )
-        mb._GetBlurPsf()
-    
-        # Construct the processing chain
-        channelChain = ChannelProcessingChain(True)
-        
+        super(Mrfm2dBlurWithNoise, self).__init__(optimizer, simParametersDict, '2-d Mrfm blur with additive Gaussian noise example')
+        self.debugMessages = []  
+                               
+    """ Abstract method override """
+    def GetBlur(self):
+        numPointsInMesh = np.min([32, self.ImageShape[0]])
+        blurEx = MrfmBlurExample(self._optimizer, (numPointsInMesh,), MrfmBlur.BLUR_2D, '').RunExample()
+        self._psfSupport = blurEx.Blur.PsfSupport
+        return blurEx.Blur
+         
+    def GetImageGenerator(self):
+        # Get the ImageGenerator after we've constructed the psf. This is b/c we need to figure
+        # out the border width so that convolution with the psf doesn't result in spillover.
         ig = ImageGeneratorFactory.GetImageGenerator('random_binary_2d')
-        igBorderWidth = int(math.ceil((max(mb.PsfSupport[0]) - min(mb.PsfSupport[0]))/2.0)) + 1; # 1 shouldn't be necessary really
+        igBorderWidth = int(math.ceil((max(self._psfSupport[0]) - min(self._psfSupport[0]))/2.0)) + 1; # 1 shouldn't be necessary really
         ig.SetParameters(**{ 
-                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
-                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero,
+                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
+                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
                             AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
                            }
                          )
-#        print("Border width in image generator is {0}".format(igBorderWidth))
+        self.debugMessages.append("Border width in image generator is {0}".format(igBorderWidth))           
+        return ig
+    
+    def RunExample(self):
+        super(Mrfm2dBlurWithNoise, self).RunExample()
+        self.debugMessages.append("Blur shift is: {0}".format(ex.channelChain.channelBlocks[1].BlurShift))
         
-        ng = NoiseGeneratorFactory.GetNoiseGenerator('additive_gaussian')
-        if (noiseSigma is not None) and (noiseSigma >= 0):
-            ng.SetParameters(**{
-                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: noiseSigma
-                                }
-                             )
-        elif (snrDb is not None):
-            ng.SetParameters(**{
-                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb
-                                }
-                             )
-        else:
-            raise NameError('noiseSigma or snrDb must be set') 
-        
-        channelChain.channelBlocks.append(ig); # image generator                        
-        channelChain.channelBlocks.append(mb); # MRFM blur
-        channelChain.channelBlocks.append(ng); # noise generator
-        
-        # Run
-        self.channelChain = channelChain
-        self.blurredImageWithNoise = channelChain.RunChain()
-
-        # Either noiseSigma or SNR dB must be specified. Update the other qty            
-        if (noiseSigma is not None) and (snrDb is None):
-            # Update snrDb
-            self._simParametersDict[AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB] = ng.snrDb
-        elif (noiseSigma is None) and (snrDb is not None):
-            # Update noiseSigma
-            self._simParametersDict[AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA] = ng.gaussianNoiseSigma
+    def Plot(self):
+        # In order to remove the shift, must access the SyntheticBlur block in the channel chain
+        blurredImageWithNoiseForDisplay = self.channelChain \
+                                              .channelBlocks[1] \
+                                              .RemoveShiftFromBlurredImage(self.blurredImageWithNoise)
+                                
+        # Random sparse image                                
+        plt.figure(1); plt.imshow(self.channelChain.intermediateOutput[0], interpolation='none'); plt.colorbar()
+        # Blur
+        plt.figure(); plt.imshow(self.blurPsfInThetaFrame, interpolation='none'); plt.colorbar()      
+        # After convolution with the blur psf + noise
+        plt.figure(); plt.imshow(blurredImageWithNoiseForDisplay, interpolation='none'); plt.colorbar()
+        plt.show()     
                     
-        self.blurPsfInThetaFrame = mb.BlurPsfInThetaFrame      
-                
 if __name__ == "__main__":           
-    # Construct the example object
-    ex = Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetParameterOptimizer(), 
+    # Construct the example object and invoke its RunExample method
+    ex = Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetBlurParameterOptimizer(),
                              { 
-                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20 
+                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (42, 42)
                               }
                              )
-    ex.RunExample()
-       
-    # In order to remove the shift, must access the SyntheticBlur block in the channel chain
-    print("Blur shift is: " + str(ex.channelChain.channelBlocks[1].BlurShift))
-    blurredImageWithNoiseForDisplay = ex.channelChain \
-                                        .channelBlocks[1] \
-                                        .RemoveShiftFromBlurredImage(ex.blurredImageWithNoise)
-    plt.figure(1); plt.imshow(ex.channelChain.intermediateOutput[0], interpolation='none'); plt.colorbar();
-    plt.figure(); plt.imshow(ex.blurPsfInThetaFrame, interpolation='none'); plt.colorbar()
-    plt.figure(); plt.imshow(blurredImageWithNoiseForDisplay, interpolation='none'); plt.colorbar()
-    plt.show()               
+    ex.RunExample()    
+    print "\n".join(ex.debugMessages)
+    ex.Plot()
+    
+
+        
+              
