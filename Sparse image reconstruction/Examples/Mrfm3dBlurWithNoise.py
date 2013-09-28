@@ -1,5 +1,5 @@
 import math
-import numpy as np
+#import numpy as np
 import pylab as plt
 
 from AbstractBlurWithNoise import AbstractBlurWithNoise
@@ -22,6 +22,23 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
         opti.bUseSmallerDeltaB0 = False
         opti.CalcOptimalValues(1e4, 3)
         return opti   
+
+    @staticmethod  
+    def _PlotXySlices(fignumStart, img):
+        imgShape = img.shape
+        assert len(imgShape) == 3        
+        # Plot the 3-d psf by plotting all x-y slices
+        for zInd in range(imgShape[2]):
+            plt.figure(fignumStart + zInd)
+            plt.imshow(img[:, :, zInd], interpolation='none')        
+            plt.xlabel('x'), plt.ylabel('y') 
+#            plt.colorbar()                
+            plt.title("slice " + str(zInd + 1))        
+            
+    # Constants
+    IMG_INITIAL = 0
+    IMG_BLUR_PSF = 1
+    IMG_BLURRED = 2
     
     def __init__(self, optimizer, simParametersDict):
         super(Mrfm3dBlurWithNoise, self).__init__(optimizer, simParametersDict, '3-d Mrfm blur with additive Gaussian noise example')    
@@ -51,11 +68,17 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
     def RunExample(self):
         super(Mrfm3dBlurWithNoise, self).RunExample()
         self.debugMessages.append("Blur shift is: {0}".format(ex.channelChain.channelBlocks[1].BlurShift))
-                
-    def Plot(self):
-        blurredImageWithNoiseForDisplay = self.channelChain \
-                                              .channelBlocks[1] \
-                                              .RemoveShiftFromBlurredImage(self.blurredImageWithNoise)                                   
+                      
+    def Plot(self, plotType, fignumStart=1):
+        # Can't create plots of the 3 images as in Mrfm2dBlurWithNoise. The user has to select one
+        # image to plot
+        imgToPlot = {
+                     Mrfm3dBlurWithNoise.IMG_INITIAL: self.channelChain.intermediateOutput[0],
+                     Mrfm3dBlurWithNoise.IMG_BLUR_PSF: self.blurPsfInThetaFrame,
+                     Mrfm3dBlurWithNoise.IMG_BLURRED: self.channelChain.channelBlocks[1].RemoveShiftFromBlurredImage(self.blurredImageWithNoise)
+                     }.get(plotType, None)                 
+        if imgToPlot is not None:
+            self._PlotXySlices(fignumStart, imgToPlot)
     
 if __name__ == "__main__":
     # Construct the example object and invoke its RunExample method
@@ -66,4 +89,9 @@ if __name__ == "__main__":
                               }
                              )
     ex.RunExample()  
-    print "\n".join(ex.debugMessages)          
+    print "\n".join(ex.debugMessages)
+     
+#    ex.Plot(Mrfm3dBlurWithNoise.IMG_BLUR_PSF, 1)
+    ex.Plot(Mrfm3dBlurWithNoise.IMG_INITIAL, 1)   
+    ex.Plot(Mrfm3dBlurWithNoise.IMG_BLURRED, 101)
+    plt.show()      

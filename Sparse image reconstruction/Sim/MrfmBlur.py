@@ -200,7 +200,9 @@ class MrfmBlur(AbstractBlur):
         self._blurPsf = psf / np.max(psf.flat)
         self._psfSupport = psfSupport
         for dimInd in range(len(blurShift)):
-            blurShift[dimInd] = min(psfSupport[dimInd]) + math.floor((max(psfSupport[dimInd]) - min(psfSupport[dimInd])) / 2)                                   
+            blurShift[dimInd] = min(psfSupport[dimInd]) + math.floor((max(psfSupport[dimInd]) - min(psfSupport[dimInd])) / 2)
+        if len(blurShift) == 3: # XXX
+            blurShift[2] = 0                                   
         self._blurShift = tuple(blurShift)
         
     def BlurImage(self, theta):               

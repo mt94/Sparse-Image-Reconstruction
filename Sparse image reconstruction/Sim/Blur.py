@@ -19,12 +19,12 @@ class AbstractBlur(chb.AbstractChannelBlock):
             raise UnboundLocalError("BlurShift isn't defined")
         else:
             assert len(anImage.shape) == len(self.BlurShift)
-#            tmp = np.array(anImage)
             tmp = anImage            
             assert np.all(self.BlurShift > 0)            
             for axisInd in range(len(self.BlurShift)):                
                 tmp = np.roll(tmp, int(-math.floor(self.BlurShift[axisInd])), axis=axisInd)
-            return np.matrix(tmp)
+#            return np.matrix(tmp)
+            return tmp
 
     @property
     def ThetaShape(self):

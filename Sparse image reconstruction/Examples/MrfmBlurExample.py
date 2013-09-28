@@ -30,10 +30,12 @@ class MrfmBlurExample(AbstractExample):
         else:
             # 3-d blur
             blurPsfShape = mrfmBlurObj.BlurPsf.shape
+            # Plot the 3-d psf by plotting all x-y slices
             for zInd in range(blurPsfShape[2]):
                 plt.figure(fignum + zInd)
                 plt.imshow(mrfmBlurObj.BlurPsf[:, :, zInd], interpolation='none')        
-                plt.xlabel('x'), plt.ylabel('y'), plt.colorbar()                
+                plt.xlabel('x'), plt.ylabel('y')
+#                plt.colorbar()                
                 plt.title(self.exampleDesc + ": slice " + str(zInd + 1))     
                         
         print(self.exampleDesc + ": psf has size: " + str(mrfmBlurObj.BlurPsf.shape))
@@ -80,21 +82,21 @@ if __name__ == "__main__":
     example1Desc = '2d MRFM psf used in psf_sim_sing.m'
     opti = MrfmBlurParameterOptimizer()
     opti.CalcOptimalValues(3e4, 3)       
-    MrfmBlurExample(opti, (100,), MrfmBlur.BLUR_2D, example1Desc).RunExample().Plot(1)
+    #MrfmBlurExample(opti, (100,), MrfmBlur.BLUR_2D, example1Desc).RunExample().Plot(1)
     
     # Generate 2-d MRFM psf used in 04/f/sp_img_recon.m (less realistic parameters than those used in psf_sim_sing.m)
     example2Desc = '2d MRFM psf used in sp_img_recon.m'
     opti = MrfmBlurParameterOptimizer(deltaB0=100) 
     opti.bUseSmallerDeltaB0 = False;    # Use deltaB0 <- 100
     opti.CalcOptimalValues(1e4, 6, R0=4)
-    MrfmBlurExample(opti, (32,), MrfmBlur.BLUR_2D, example2Desc).RunExample().Plot(2)
+    #MrfmBlurExample(opti, (32,), MrfmBlur.BLUR_2D, example2Desc).RunExample().Plot(2)
             
     # Generate 3-d MRFM psf
     example3Desc = '3d MRFM psf used in pdb_sstart_psf.m'
     opti = MrfmBlurParameterOptimizer(deltaB0=100)
     opti.bUseSmallerDeltaB0 = False;    # Use delta B0 <- 100
     opti.CalcOptimalValues(1e4, 3)
-    #MrfmBlurExample(opti, (32, 16), MrfmBlur.BLUR_3D, example3Desc).RunExample().Plot(3)  
+    MrfmBlurExample(opti, (32, 16), MrfmBlur.BLUR_3D, example3Desc).RunExample().Plot(3)  
         
     # Call show to display the plots99
     plt.show()        
