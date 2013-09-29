@@ -50,7 +50,7 @@ class Mrfm2dBlurWithNoise(AbstractBlurWithNoise):
     
     def RunExample(self):
         super(Mrfm2dBlurWithNoise, self).RunExample()
-        self.debugMessages.append("Blur shift is: {0}".format(ex.channelChain.channelBlocks[1].BlurShift))
+        self.debugMessages.append("Blur shift is: {0}".format(self.channelChain.channelBlocks[1].BlurShift))
         
     def Plot(self):
         # In order to remove the shift, must access the SyntheticBlur block in the channel chain

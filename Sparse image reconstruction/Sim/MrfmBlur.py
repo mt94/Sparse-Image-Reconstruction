@@ -156,7 +156,7 @@ class MrfmBlur(AbstractBlur):
         if ((blurType == MrfmBlur.BLUR_2D) or (blurType == MrfmBlur.BLUR_3D)):
             if ((self.X is not None) and (self.Y is not None) and (self.Z is not None)):
                 # If the mesh is defined when the object is initialized, get the blur psf right away
-                self._GetBlurPsf()           
+                self.GetBlurPsf()           
         else:
             raise NotImplementedError("MrfmBlur type " + self._blurType + " hasn't been implemented")        
         
@@ -179,7 +179,7 @@ class MrfmBlur(AbstractBlur):
     def PsfSupport(self):
         return self._psfSupport
             
-    def _GetBlurPsf(self):
+    def GetBlurPsf(self):
         if ((self.X is None) or (self.Y is None) or (self.Z is None)):
             raise UnboundLocalError('Cannot get psf since mesh definition is undefined')
         
@@ -201,7 +201,9 @@ class MrfmBlur(AbstractBlur):
         self._psfSupport = psfSupport
         for dimInd in range(len(blurShift)):
             blurShift[dimInd] = min(psfSupport[dimInd]) + math.floor((max(psfSupport[dimInd]) - min(psfSupport[dimInd])) / 2)
-        if len(blurShift) == 3: # XXX
+        if len(blurShift) == 3: 
+            # For the 3-d MRFM blur, there's no shift introduced in the z-dimension, unlike in the
+            # x and y dimensions 
             blurShift[2] = 0                                   
         self._blurShift = tuple(blurShift)
         
@@ -209,7 +211,7 @@ class MrfmBlur(AbstractBlur):
         self._thetaShape = theta.shape
         
         if (self._blurPsf is None):
-            self._GetBlurPsf()
+            self.GetBlurPsf()
          
         if (len(self._thetaShape) != len(self._blurPsf.shape)):
             raise ValueError("Mismatch in theta's shape vs. the psf's shape")

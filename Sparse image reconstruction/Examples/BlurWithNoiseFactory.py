@@ -1,16 +1,21 @@
 from Gaussian2dBlurWithNoise import Gaussian2dBlurWithNoise
 from Mrfm2dBlurWithNoise import Mrfm2dBlurWithNoise
+from Mrfm3dBlurWithNoise import Mrfm3dBlurWithNoise
 
 class BlurWithNoiseFactory(object):
     _concreteBlurWithNoise = {
-                              'mrfm2d': Mrfm2dBlurWithNoise,
-                              'gaussian2d': Gaussian2dBlurWithNoise                              
+                              'mrfm2d': (Mrfm2dBlurWithNoise, Mrfm2dBlurWithNoise.GetBlurParameterOptimizer),
+                              'mrfm3d': (Mrfm3dBlurWithNoise, Mrfm3dBlurWithNoise.GetBlurParameterOptimizer),
+                              'gaussian2d': (Gaussian2dBlurWithNoise, None)                              
                               }
     @staticmethod
     def GetBlurWithNoise(blurWithNoiseDesc, simParametersDict):
         if blurWithNoiseDesc not in BlurWithNoiseFactory._concreteBlurWithNoise:
             raise NotImplementedError('BlurWithNoise ' + str(blurWithNoiseDesc) + " isn't implemented")
-        if (blurWithNoiseDesc == 'mrfm2d'):
-            return Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetBlurParameterOptimizer(), simParametersDict)
+        
+        clsConstructor, clsInitializer = BlurWithNoiseFactory._concreteBlurWithNoise[blurWithNoiseDesc]
+        
+        if clsInitializer is not None:
+            return clsConstructor(clsInitializer(), simParametersDict)
         else:
-            return BlurWithNoiseFactory._concreteBlurWithNoise[blurWithNoiseDesc](simParametersDict)
+            return clsConstructor(simParametersDict)

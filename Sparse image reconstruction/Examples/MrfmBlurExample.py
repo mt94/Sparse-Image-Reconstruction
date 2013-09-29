@@ -73,7 +73,7 @@ class MrfmBlurExample(AbstractExample):
         
         # Create the MRFM blur      
         mb = MrfmBlur(self._blurType, blurParametersDict)        
-        mb._GetBlurPsf()
+        mb.GetBlurPsf()
         self._mrfmBlurObj = mb
         return self                    
         
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     opti = MrfmBlurParameterOptimizer(deltaB0=100)
     opti.bUseSmallerDeltaB0 = False;    # Use delta B0 <- 100
     opti.CalcOptimalValues(1e4, 3)
-    MrfmBlurExample(opti, (32, 16), MrfmBlur.BLUR_3D, example3Desc).RunExample().Plot(3)  
+    MrfmBlurExample(opti, (32, 14), MrfmBlur.BLUR_3D, example3Desc).RunExample().Plot(3)  
         
     # Call show to display the plots99
     plt.show()        

@@ -55,7 +55,12 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
     def GetImageGenerator(self):
         ig = ImageGeneratorFactory.GetImageGenerator('random_binary_3d')
         # 1 shouldn't be necessary really
-        igBorderWidth = [(int(math.ceil((max(suppVec) - min(suppVec))/2.0)) + 1) for suppVec in self._psfSupport]                                                  
+        igBorderWidth = [(int(math.ceil((max(suppVec) - min(suppVec))/2.0)) + 1) for suppVec in self._psfSupport[0:2]]
+        # Handle the z dimension differently. See also the MrfmBlur.GetBlurPsf method
+        igBorderWidth.append(
+                             int(math.ceil(max(self._psfSupport[2]) - min(self._psfSupport[2])) + 1)
+                             )
+        # Set the parameters for the 3d random binary image generator
         ig.SetParameters(**{ 
                             AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
                             AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
@@ -85,7 +90,7 @@ if __name__ == "__main__":
     ex = Mrfm3dBlurWithNoise(Mrfm3dBlurWithNoise.GetBlurParameterOptimizer(),
                              { 
                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
-                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32, 12)
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32, 14)
                               }
                              )
     ex.RunExample()  
