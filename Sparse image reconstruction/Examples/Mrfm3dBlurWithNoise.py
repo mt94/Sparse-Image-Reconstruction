@@ -72,7 +72,7 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
         
     def RunExample(self):
         super(Mrfm3dBlurWithNoise, self).RunExample()
-        self.debugMessages.append("Blur shift is: {0}".format(ex.channelChain.channelBlocks[1].BlurShift))
+        self.debugMessages.append("Blur shift is: {0}".format(self.channelChain.channelBlocks[1].BlurShift))
                       
     def Plot(self, plotType, fignumStart=1):
         # Can't create plots of the 3 images as in Mrfm2dBlurWithNoise. The user has to select one

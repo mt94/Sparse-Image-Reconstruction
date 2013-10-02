@@ -2,6 +2,7 @@ from ChannelBlock import AbstractChannelBlock
 from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.Blur import AbstractBlur
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from Systems.Timer import Timer
 
 class ChannelProcessingChain(object):
     @staticmethod
@@ -41,8 +42,10 @@ class ChannelProcessingChain(object):
     
     def __init__(self, bSaveAllIntermediateOutput=False):
         self.channelBlocks = []
+        self.channelBlocksTiming = []
         self.bSaveAllIntermediateOutput = bSaveAllIntermediateOutput
         self.intermediateOutput = []
+        
             
     def RunChain(self, chainInput=None):
         cbInput = chainInput
@@ -56,12 +59,14 @@ class ChannelProcessingChain(object):
             if channelBlock.channelBlockType in ChannelProcessingChain._channelBlockFunctionDict:
                 assert channelBlock.channelBlockType in ChannelProcessingChain._channelBlockFunctionAcceptsInputDict
                 cbFunc = ChannelProcessingChain._channelBlockFunctionDict[channelBlock.channelBlockType]
-                # XXX Must call the __get__ method to convert a descriptor to a callable object                
-                if not ChannelProcessingChain._channelBlockFunctionAcceptsInputDict[channelBlock.channelBlockType]:
-                    cbOutput = cbFunc.__get__(None, ChannelProcessingChain)(channelBlock)
-                else:
-                    assert cbInput is not None                    
-                    cbOutput = cbFunc.__get__(None, ChannelProcessingChain)(channelBlock, cbInput)
+                with Timer() as t:
+                    # XXX Must call the __get__ method to convert a descriptor to a callable object                
+                    if not ChannelProcessingChain._channelBlockFunctionAcceptsInputDict[channelBlock.channelBlockType]:
+                        cbOutput = cbFunc.__get__(None, ChannelProcessingChain)(channelBlock)
+                    else:
+                        assert cbInput is not None                    
+                        cbOutput = cbFunc.__get__(None, ChannelProcessingChain)(channelBlock, cbInput)
+                self.channelBlocksTiming.append(t.msecs)
             else:
                 # Only recognize several types of AbstractChannelBlock
                 raise NotImplementedError('Don\'t know how to handle channel block: ' +

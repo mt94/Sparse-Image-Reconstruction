@@ -3,7 +3,7 @@ import warnings
 
 from LarsConstants import LarsConstants
 from LarsIterationEvaluator import LarsIterationEvaluator
-from Recon.AbstractReconstructor import AbstractReconstructor
+from Recon.AbstractReconstructor import AbstractReconstructor 
 from Recon.AbstractIterationsObserver import AbstractIterationsObserver
 from Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
 #from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
@@ -191,8 +191,8 @@ class LarsReconstructor(AbstractReconstructor):
         maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement, iterObserver = \
             self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
                                                                                 
-        muHatActiveSet = np.matrix(np.zeros((y.size, 1)))
-        betaHatActiveSet = np.matrix(np.zeros((y.size, 1)))
+        muHatActiveSet = np.zeros((y.size, 1))
+        betaHatActiveSet = np.zeros((y.size, 1))
         
         XActiveSetColumns = []       
         corrHatAbsMaxActualHistory = []                

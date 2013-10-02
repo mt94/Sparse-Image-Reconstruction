@@ -1,5 +1,5 @@
 import numpy as np
-#import pylab as plt
+import pylab as plt
 from Recon.AbstractIterationsObserver import AbstractIterationsObserver
 
 class LarsIterationEvaluator(AbstractIterationsObserver):
@@ -39,6 +39,15 @@ class LarsIterationEvaluator(AbstractIterationsObserver):
         self.NoiseSigma = None
         self.ThetaTrue = None
         self.MuTrue = None
+                    
+    @staticmethod
+    def CalculateL0(x, EPS):
+        return np.where(np.abs(x) > EPS)[0].size
+    
+    """ Implementation of abstract members """    
+    @property
+    def TerminateIterations(self):
+        return False # Never terminate
         
     @property
     def HistoryEstimate(self):
@@ -48,28 +57,26 @@ class LarsIterationEvaluator(AbstractIterationsObserver):
     def HistoryState(self):
         return self._historyState
             
-    @staticmethod
-    def CalculateL0(x, EPS):
-        return np.where(np.abs(x) > EPS)[0].size
-    
-    """ Implementation of abstract members """
-    
-    @property
-    def TerminateIterations(self):
-        return False # Never terminate
-        
     def UpdateWithEstimates(self, thetaNp1, thetaN, fitErrorN):
         raise NotImplementedError('Method unimplemented')
             
-    def UpdateState(self, ipStateDict):
+    def UpdateState(self, ipStateDict, bPlotThetaErr=False):
         fitError = ipStateDict[LarsIterationEvaluator.STATE_KEY_FIT_ERROR]
         thetaHat = ipStateDict[LarsIterationEvaluator.STATE_KEY_THETA]
+        self._historyEstimate.append(np.array(thetaHat))   
                 
         rss = np.sum(fitError*fitError)
         thetaHatL0 = self.CalculateL0(thetaHat, self._EPS)
         
         if self.ThetaTrue is not None:
-            thetaErr = self.ThetaTrue - np.reshape(np.array(thetaHat), (1, self.ThetaTrue.size))
+            thetaErr = self.ThetaTrue.flat - np.reshape(np.array(thetaHat), (1, self.ThetaTrue.size))
+            if bPlotThetaErr: # DEBUG
+                plt.figure(1), plt.clf()
+                plt.plot(self.ThetaTrue.flat, 'k.')
+                plt.hold(True)
+                plt.plot(thetaHat.flat, 'ms')
+                plt.show()
+                
         else:
             thetaErr = None                            
         
@@ -94,11 +101,12 @@ class LarsIterationEvaluator(AbstractIterationsObserver):
         if thetaErr is not None:
             opStateDict[LarsIterationEvaluator.OUTPUT_METRIC_THETAERR_L1] = np.sum(np.abs(thetaErr))
             opStateDict[LarsIterationEvaluator.OUTPUT_METRIC_THETAERR_L2] = np.sqrt(np.sum(thetaErr*thetaErr))
+            # This comes from (3.17) of the LARS paper
             opStateDict[LarsIterationEvaluator.OUTPUT_METRIC_THETA_PROPEXPL] = 1 - np.sum(thetaErr*thetaErr)/np.sum(self.ThetaTrue*self.ThetaTrue)
             
         if (LarsIterationEvaluator.FUNC_KEY_MU_FROM_THETA in ipStateDict) and (self.MuTrue is not None):
             fnMapThetaToMu = ipStateDict[LarsIterationEvaluator.FUNC_KEY_MU_FROM_THETA]
-            muErr = self.MuTrue - np.reshape(fnMapThetaToMu(thetaHat), (1, self.MuTrue.size))
+            muErr = self.MuTrue.flat - np.reshape(fnMapThetaToMu(thetaHat), (1, self.MuTrue.size))
             opStateDict[LarsIterationEvaluator.OUTPUT_METRIC_MU_PROPEXPL] = 1 - np.sum(muErr*muErr)/np.sum(self.MuTrue*self.MuTrue)                          
                     
         self._historyState.append(opStateDict)

@@ -57,7 +57,7 @@ class T_MrfmBlurParameterOptimizer(unittest.TestCase):
         """
         opti = MrfmBlurParameterOptimizer(deltaB0=100)
         opti.bUseSmallerR0 = True
-        opti.bUseSmallerB0 = False
+        opti.bUseSmallerDeltaB0 = False
         opti.CalcOptimalValues(1e4, 6, R0=4)
         # Check its values
         self.assertAlmostEquals(opti.Bext, 9401.008494816)

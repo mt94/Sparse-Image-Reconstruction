@@ -3,13 +3,15 @@ import numpy as np
 import cProfile
 import pylab as plt
 
-from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
+from Examples.Gaussian2dBlurWithNoise import Gaussian2dBlurWithNoise
 from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
 from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.Gaussian.Thresholding import ThresholdingIdentity
 from Recon.NormMinimizer.L2NormMinimizer import L2NormDirectMinimizerReconstructor
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
+from Sim.AbstractImageGenerator import AbstractImageGenerator
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
@@ -22,7 +24,10 @@ class T_Recon_Noiseless(unittest.TestCase):
     testMessages = []
     
     def setUp(self):
-        ex = GaussianBlurWithNoise({GaussianBlurWithNoise.INPUT_KEY_NOISE_SIGMA: 0})
+        ex = Gaussian2dBlurWithNoise({
+                                      AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: 0,
+                                      AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32)
+                                      })
         ex.RunExample()
         self.channelChain = ex.channelChain        
         self.blurredImage = ex.blurredImageWithNoise # Since we specified a sigma of 0, the image is noiseless

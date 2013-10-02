@@ -31,15 +31,17 @@ class LarsLassoReconstructor(LarsReconstructor):
                 }                                     
                 
     def Iterate(self, y, fnConvolveWithPsf, fnConvolveWithPsfPrime):
-
+        """
+        Override the Iterate method of the base class.
+        """
         maxIter, nVerbose, bEnforceOneatatimeJoin, fnComputeCorrHat, corrHatAbsMax, activeSet, activeSetComplement, iterObserver = \
             self._GetVariablesForIteration(y, fnConvolveWithPsfPrime)
         
         # Only support one join at a time for the LARS-LASSO algorithm
         assert bEnforceOneatatimeJoin is True
                                 
-        muHatActiveSet = np.matrix(np.zeros((y.size, 1)))
-        betaHatActiveSet = np.matrix(np.zeros((y.size, 1)))
+        muHatActiveSet = np.zeros((y.size, 1))
+        betaHatActiveSet = np.zeros((y.size, 1))
         
         XActiveSetColumns = []       
         corrHatAbsMaxActualHistory = []                 
@@ -68,14 +70,10 @@ class LarsLassoReconstructor(LarsReconstructor):
             corrHatAbsMaxActual = np.max(corrHatAbs) # (2.9)                                
             corrHatAbsMismatch = np.abs(corrHatAbsMax - corrHatAbsMaxActual)
                         
-            if corrHatAbsMismatch > 1.0e-9: # self.EPS*10 is too strict???
+            if corrHatAbsMismatch > 1.0e-5: # self.EPS*10 is too strict???
                 indCorrHatAbsMaxActual = np.argmax(corrHatAbs)
-                raise RuntimeError('Iteration {0}: Abs corr hats don\'t match: theory is {1} whereas actual is {2} @ index/indices {3}, |delta| is {4}'.format(numIter,
-                                                                                                                                                               corrHatAbsMax,
-                                                                                                                                                               corrHatAbsMaxActual,
-                                                                                                                                                               indCorrHatAbsMaxActual,
-                                                                                                                                                               corrHatAbsMismatch)
-                                   )
+                fmtString = "Iteration {0}: Abs corr hats don't match: theory is {1} whereas actual is {2} @ index/indices {3}, |delta| is {4}"
+                raise RuntimeError(fmtString.format(numIter, corrHatAbsMax, corrHatAbsMaxActual, indCorrHatAbsMaxActual, corrHatAbsMismatch))
                 
             corrHatAbsMaxActualHistory.append(corrHatAbsMaxActual)
             
@@ -125,7 +123,12 @@ class LarsLassoReconstructor(LarsReconstructor):
                                            
             activeSetResult = LarsReconstructor._CalculateActiveSetVariables(XActiveSet)
                                  
-            a =  fnConvolveWithPsfPrime(np.reshape(activeSetResult['u'], y.shape))
+            a =  fnConvolveWithPsfPrime(
+                                        np.reshape(
+                                                   np.array(activeSetResult['u']), 
+                                                   y.shape
+                                                   )
+                                        )
             aFlat = a.flat
             
             joinResult = LarsReconstructor._CalculateNewJoinIndex(corrHatAbsMax, 
@@ -186,7 +189,9 @@ class LarsLassoReconstructor(LarsReconstructor):
                                           LarsIterationEvaluator.STATE_KEY_FIT_ERROR: y - fnConvolveWithPsf(np.reshape(betaHatActiveSet, y.shape)),
                                           LarsIterationEvaluator.OUTPUT_METRIC_CORRHATABS_MAX: corrHatAbsMax,
                                           LarsIterationEvaluator.FUNC_KEY_MU_FROM_THETA: lambda aTheta: fnConvolveWithPsf(np.reshape(aTheta, y.shape))
-                                          })              
+                                          },
+                                         bPlotThetaErr=False
+                                         )              
             numIter += 1
             
             if len(msgBuffer) > 0:

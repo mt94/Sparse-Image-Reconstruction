@@ -11,6 +11,7 @@ from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from Systems.Timer import Timer
 
 class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample):
     """
@@ -133,28 +134,32 @@ def RunReconstructor(param):
         exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
                                                                               {
                                                                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32)
+                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
                                                                                }
                                                                               )
     else:
         raise NameError('noiseSigma or snrDb must be set') 
-            
-    exReconstructor.RunExample()
+    
+    with Timer() as t:
+        exReconstructor.RunExample()
+        
+    thetaDiff = exReconstructor.Theta - exReconstructor.ThetaEstimated
         
     return {
-            'error_l2_norm': np.linalg.norm(exReconstructor.Theta - exReconstructor.ThetaEstimated, 2),
+            'error_l2_norm': np.linalg.norm(thetaDiff.flat, 2),
             'hyperparameter': exReconstructor.Hyperparameter,      
-            'termination_reason': exReconstructor.TerminationReason      
+            'termination_reason': exReconstructor.TerminationReason,
+            'timing_ms': t.msecs   
             }
                 
 if __name__ == "__main__":
-    BLURDESC = 'mrfm2d'
-    IMAGESHAPE = (32, 32)
+    BLURDESC = 'mrfm3d'
+    IMAGESHAPE = (32, 32, 14);  # (32, 32)
     GSUP = 1/np.sqrt(2)
     SNRDB = 20;
     
     # For MAP1
-    #runArgs = [BLURDESC, IMAGESHAPE, SNRDB]        
+#     runArgs = [BLURDESC, IMAGESHAPE, SNRDB]        
     # For MAP2
     runArgs = [BLURDESC, IMAGESHAPE, GSUP, SNRDB]
     mapDesc = {3: 'MAP1', 4: 'MAP2'}[len(runArgs)]  
@@ -165,21 +170,21 @@ if __name__ == "__main__":
         
     if not bRunPool:
         mapResult = RunReconstructor(runArgs)
-        print("{0}: est. hyper.={1}, l2 norm recon err={2}. {3}".format(
-                                                                        mapDesc,
-                                                                        mapResult['hyperparameter'],
-                                                                        mapResult['error_l2_norm'],
-                                                                        mapResult['termination_reason']
-                                                                        ))        
+        print("{0}: est. hyper.={1}, l2 norm recon err={2}, timing={3:g}s. {4}".format(
+                                                                                       mapDesc,
+                                                                                       mapResult['hyperparameter'],
+                                                                                       mapResult['error_l2_norm'],
+                                                                                       mapResult['timing_ms'] / 1.0e3,
+                                                                                       mapResult['termination_reason']
+                                                                                       ))        
     else:
         pool = Pool(processes=NUMPROC)
         resultPool = pool.map(RunReconstructor, [runArgs] * NUMTASKS)
         for aResult in resultPool:
-            print("{0}: est. hyper.={1}, l2 norm recon err={2}. {3}".format(
-                                                                            mapDesc,
-                                                                            aResult['hyperparameter'],
-                                                                            aResult['error_l2_norm'],
-                                                                            aResult['termination_reason']
-                                                                            ))        
-
-#    plt.show()
+            print("{0}: est. hyper.={1}, l2 norm recon err={2}, timing={3:g}s. {4}".format(
+                                                                                           mapDesc,
+                                                                                           aResult['hyperparameter'],
+                                                                                           aResult['error_l2_norm'],
+                                                                                           aResult['timing_ms'] / 1.0e3,
+                                                                                           aResult['termination_reason']
+                                                                                           ))        

@@ -28,6 +28,14 @@ class EmgaussIterationsObserver(AbstractIterationsObserver):
     @property
     def TerminateIterations(self):
         return self._bTerminate
+    
+    @property
+    def HistoryEstimate(self):
+        raise NotImplementedError()
+    
+    @property
+    def HistoryState(self):
+        raise NotImplementedError()
                 
     def UpdateWithEstimates(self, reconArgsNp1, reconArgsN, fitErrorN=None):
         if (self.terminateCondition == EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2):                    

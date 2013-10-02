@@ -2,9 +2,7 @@ import numpy as np
 import pylab as plt
 import unittest
 
-from Examples.GaussianBlurWithNoise import GaussianBlurWithNoise
 from Sim.SyntheticBlur import SyntheticBlur
-from Sim.ImageGenerator import AbstractImageGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 

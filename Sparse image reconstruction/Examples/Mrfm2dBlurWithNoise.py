@@ -76,7 +76,14 @@ if __name__ == "__main__":
                              )
     ex.RunExample()    
     print "\n".join(ex.debugMessages)
+    print("Channel block timing [ms]: {0}".format(
+                                                  ", ".join(
+                                                            [str(tElapsed) for tElapsed in ex.channelChain.channelBlocksTiming]
+                                                            )
+                                                  )
+          )
     ex.Plot()
+    
     
 
         
