@@ -14,6 +14,11 @@ class AbstractReconstructorExample(AbstractExample.AbstractExample):
         
         self._reconstructor = None;     # The reconstructor
         self._thetaEstimated = None;    # Theta as estimated by the reconstructor
+        self._timingMs = None;          # Timing of algorithm
+    
+    @property
+    def TimingMs(self):
+        return self._timingMs
     
     @property
     def Theta(self):

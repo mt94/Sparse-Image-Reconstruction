@@ -80,7 +80,7 @@ class AbstractEmgaussReconstructor(AbstractReconstructor):
             self._reconArgs = reconArgsNext
             
         if numIter == maxIter:
-            self._terminationReason = 'Max iterations reached'
+            self._terminationReason = 'Max iterations {0} reached'.format(maxIter)
             
         return self._reconArgs
        

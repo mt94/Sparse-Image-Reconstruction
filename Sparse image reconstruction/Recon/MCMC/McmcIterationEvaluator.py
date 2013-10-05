@@ -16,10 +16,10 @@ class McmcIterationEvaluator(AbstractIterationsObserver):
     STATE_KEY_A_ITER = 'a_iter'
     STATE_KEY_NOISEVAR_ITER = 'noisevar_iter'
         
-    def __init__(self, Eps, xShape, xTrue=None, xFigureNum=None, y=None, countIterationDisplaySet=None):
+    def __init__(self, Eps, xShape, xTrue=None, xFigureNum=None, y=None, countIterationDisplaySet=None, bVerbose=False):
         super(McmcIterationEvaluator, self).__init__()
         
-        self.bVerbose = True
+        self.bVerbose = bVerbose
         self.Eps = Eps
         self.xShape = xShape
         self.xTrue = xTrue        
@@ -50,6 +50,14 @@ class McmcIterationEvaluator(AbstractIterationsObserver):
     def TerminateIterations(self):
         return False # Never terminate
     
+    @property
+    def HistoryEstimate(self):
+        raise NotImplementedError()
+    
+    @property
+    def HistoryState(self):
+        raise NotImplementedError()
+        
     def UpdateWithEstimates(self, thetaNp1, thetaN, fitErrorN):
         raise NotImplementedError('Method unimplemented')
     

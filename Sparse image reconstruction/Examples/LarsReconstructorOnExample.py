@@ -28,8 +28,10 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         self.iterObserver = iterObserver
         self.bTurnOnWarnings = bTurnOnWarnings
         self.bRestoreSim = bRestoreSim 
-        self.reconResult = None
-        self.timingMs = None     
+        
+        # Contains a dictionary of the last iteration of LARS. Does not necessarily correspond
+        # to the estimated theta.
+        self.reconResult = None            
         
     def _RunExperiment(self):
         if (not self.bRestoreSim):
@@ -84,7 +86,13 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
                 with Timer() as t:
                     self.reconResult = reconstructor.Estimate(yZeroMean, convMatrixObj)
                     
-        self.timingMs = t.msecs
+        # Save run variables                    
+        self._timingMs = t.msecs
+        self._channelChain = self.experimentObj.channelChain        
+        self._theta = self._channelChain.intermediateOutput[0]
+        self._y = y                            
+        self._reconstructor = reconstructor
+        
                 
     def PrintOutputSummary(self):
         activeSetDisplay = ["{0}".format(x) for x in self.reconResult[LarsConstants.OUTPUT_KEY_ACTIVESET]]
@@ -97,8 +105,9 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
                   )
             
     def PrintOutputIterations(self):
-        lassoSureCriterionPrev = None
+        lassoSureCriterionPrev = None        
         cntHistory = 1
+        
         for h in self.iterObserver.HistoryState:
             # Output metrics we always expect to have
             msg = "[{0}] ".format(cntHistory)
@@ -122,6 +131,8 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
                 
             print(msg)
             cntHistory += 1
+        
+        print("Took {0:g}ms".format(self.TimingMs))
             
     def PlotConvolvedImage2d(self, fignumStart):
         experimentObj = self.experimentObj
@@ -180,9 +191,9 @@ def PlotTheta2d(fignumStart, iterObserver, hyperparameterPick):
     plt.title('Estimated theta: iter {0}'.format(1 + indBest))      
         
 if __name__ == "__main__":
-    BLURDESC = 'mrfm3d'
+    EXPERIMENT_DESC = 'mrfm3d'
     IMAGESHAPE = (32, 32, 14); #(32, 32)
-    SNRDB = 20;
+    SNRDB = 20
     
     MyReconstructorDesc = 'lars_lasso'
     
@@ -194,7 +205,7 @@ if __name__ == "__main__":
     # Use bRestoreSim for debugging problem cases        
     ex = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, bRestoreSim=False)
     # Get the experimental object, which encapsulates the experiment on which to use the LARS reconstructor 
-    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(BLURDESC, 
+    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(EXPERIMENT_DESC, 
                                                              {
                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: SNRDB,
                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: IMAGESHAPE
@@ -206,9 +217,10 @@ if __name__ == "__main__":
     hparamPick = HyperparameterPick(iterObserver)
     hparamPick.PlotConvolvedImage2d(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, 1)
     
-#     ex.PlotConvolvedImage2d(2)
-#     PlotTheta2d(2, iterObserver, hparamPick)    
-#     plt.show()
+    if len(iterObserver.ThetaTrue.shape) == 2:
+#        ex.PlotConvolvedImage2d(2)        
+        PlotTheta2d(2, iterObserver, hparamPick)    
+        plt.show()
                 
 
     

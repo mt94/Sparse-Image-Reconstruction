@@ -7,6 +7,7 @@ from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
 from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
 from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
+from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
@@ -84,15 +85,22 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         self._reconstructor = reconstructor    
         
 def RunAlgo(param):
-    [snrDb, experimentDesc, estimatorDesc] = param
+    [snrDb, experimentDesc, imageShape, estimatorDesc] = param
     exReconstructor = SimpleThresholdingReconstructorExample(estimatorDesc, snrDb=snrDb)
-    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
-                                                                          {AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb}
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
+                                                                          experimentDesc, 
+                                                                          {
+                                                                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
+                                                                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
+                                                                           }
                                                                           )  
     exReconstructor.RunExample()
+    
+    thetaDiff = exReconstructor.Theta - exReconstructor.ThetaEstimated
+    
     return {
             'estimator': estimatorDesc,
-            'error_l2_norm': np.linalg.norm(exReconstructor.Theta - exReconstructor.ThetaEstimated, 2),            
+            'error_l2_norm': np.linalg.norm(thetaDiff.flat, 2),            
             'termination_reason': exReconstructor.TerminationReason            
             }      
             
@@ -101,16 +109,23 @@ if __name__ == '__main__':
     Run a comparison between standard Landweber iterations and iterations
     with a non-negative thresholding operation.
     """        
-    SNRDB = 20;        
+    SNRDB = 20;    
+    EXPERIMENT_DESC = 'mrfm3d'    
+    IMAGESHAPE = (32, 32, 14); #(32, 32)    
 
+#    RunAlgo([SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber_nonneg'])
+    
     pool = Pool(processes=2)
-    resultPool = pool.map(RunAlgo, [[SNRDB, 'gaussian2d', 'landweber'], [SNRDB, 'gaussian2d', 'landweber_nonneg']])
+    
+    resultPool = pool.map(
+                          RunAlgo, 
+                          [[SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber'], 
+                           [SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber_nonneg']]
+                          )
+    
     for aResult in resultPool:
         print("{0}: l2 norm recon err={1}. {2}".format(
                                                        aResult['estimator'],                                                       
                                                        aResult['error_l2_norm'],
                                                        aResult['termination_reason']
-                                                       ))            
-        
-    
-        
+                                                       ))                        

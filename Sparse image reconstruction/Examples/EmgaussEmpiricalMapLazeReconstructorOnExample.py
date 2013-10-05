@@ -93,15 +93,16 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
             # By default, assume the ctor only accepts optimSettingsDict
             reconstructor = clsReconstructor(optimSettingsDict)
             estimateArg = (initialEstimate, (initialEstimate != 0)*1)
-                                                                                                        
-        self._thetaEstimated = reconstructor.Estimate(y,
-                                                      ConvolutionMatrixUsingPsf(psfRepH),
-                                                      *estimateArg
-                                                      )
-                                            
-        # Save results        
-        self._channelChain = self.experimentObj.channelChain
         
+        with Timer() as t:
+            self._thetaEstimated = reconstructor.Estimate(y,
+                                                          ConvolutionMatrixUsingPsf(psfRepH),
+                                                          *estimateArg
+                                                          )
+            
+        # Save run variables            
+        self._timingMs = t.msecs
+        self._channelChain = self.experimentObj.channelChain        
         self._theta = self._channelChain.intermediateOutput[0]
         self._y = y                            
         self._reconstructor = reconstructor
@@ -139,9 +140,8 @@ def RunReconstructor(param):
                                                                               )
     else:
         raise NameError('noiseSigma or snrDb must be set') 
-    
-    with Timer() as t:
-        exReconstructor.RunExample()
+        
+    exReconstructor.RunExample()
         
     thetaDiff = exReconstructor.Theta - exReconstructor.ThetaEstimated
         
@@ -149,19 +149,19 @@ def RunReconstructor(param):
             'error_l2_norm': np.linalg.norm(thetaDiff.flat, 2),
             'hyperparameter': exReconstructor.Hyperparameter,      
             'termination_reason': exReconstructor.TerminationReason,
-            'timing_ms': t.msecs   
+            'timing_ms': exReconstructor.TimingMs   
             }
                 
 if __name__ == "__main__":
-    BLURDESC = 'mrfm3d'
+    EXPERIMENT_DESC = 'mrfm3d'
     IMAGESHAPE = (32, 32, 14);  # (32, 32)
     GSUP = 1/np.sqrt(2)
     SNRDB = 20;
     
     # For MAP1
-#     runArgs = [BLURDESC, IMAGESHAPE, SNRDB]        
+#     runArgs = [EXPERIMENT_DESC, IMAGESHAPE, SNRDB]        
     # For MAP2
-    runArgs = [BLURDESC, IMAGESHAPE, GSUP, SNRDB]
+    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB]
     mapDesc = {3: 'MAP1', 4: 'MAP2'}[len(runArgs)]  
     
     bRunPool = True

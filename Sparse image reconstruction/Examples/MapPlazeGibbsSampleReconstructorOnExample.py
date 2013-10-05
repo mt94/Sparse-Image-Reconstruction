@@ -6,10 +6,11 @@ from BlurWithNoiseFactory import BlurWithNoiseFactory
 from Recon.MCMC.McmcConstants import McmcConstants
 from Recon.MCMC.McmcIterationEvaluator import McmcIterationEvaluator
 from Recon.MCMC.MapPlazeGibbsSamplerReconstructor import MapPlazeGibbsSamplerReconstructor
+from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
-#from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from Systems.Timer import Timer
 
 class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
 
@@ -23,7 +24,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         super(MapPlazeGibbsSampleReconstructorOnExample, self).__init__('MAP P-LAZE Gibbs Sampler')
         self.iterObserver = iterObserver
         self.snrDb = snrDb
-        
+    
     def RunExample(self):        
         if (self.experimentObj is None):
             raise NameError('experimentObj is undefined')
@@ -45,8 +46,9 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
                               McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': 1e-2, 
                                                                                    'alpha1': 1e-2 },
                               McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER: self.iterObserver,                              
-                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: 3000,
-                              McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: 5,
+                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: 2000,
+                              McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: 300,
+                              #McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: 1,
                               McmcConstants.INPUT_KEY_NVERBOSE: 0                 
                              }
         reconstructor = MapPlazeGibbsSamplerReconstructor(optimSettingsDict)
@@ -61,38 +63,71 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         
         print("INITIAL CONDS.: hyper: w={0}, a={1}; var: {2}".format(self.wInit, self.aInit, initVar))
         
-        initializationDict = { 'init_theta': initTheta, 'init_var': initVar }                                                              
-        self.reconResult = reconstructor.Estimate(y, convMatrixObj, initializationDict)
-          
-        # Plot xTrue
-        plt.figure(1); plt.imshow(xTrue, interpolation='none'); plt.colorbar()    
-        plt.title('xTrue')
-        # Plot the reconstructed result
-        plt.figure(); plt.imshow(np.reshape(self.reconResult, xTrue.shape), interpolation='none'); plt.colorbar()
-        plt.title('Reconstructed x')
-        # Plot yErr and its histogram
-        yErr = y - np.reshape(reconstructor.hx, y.shape)
-        plt.figure(); plt.imshow(yErr, interpolation='none'); plt.colorbar()
-        plt.title('yErr')
-        plt.figure(); plt.hist(yErr.flat, 20); plt.title('Histogram of yErr')
-       
+        initializationDict = { 'init_theta': initTheta, 'init_var': initVar }   
+                                                                   
+        with Timer() as t:                                                               
+            self._thetaEstimated = reconstructor.Estimate(y, convMatrixObj, initializationDict)
+
+        # Save run variables            
+        self._timingMs = t.msecs
+        self._channelChain = self.experimentObj.channelChain        
+        self._theta = self._channelChain.intermediateOutput[0]
+        self._y = y                            
+        self._reconstructor = reconstructor
         
-if __name__ == "__main__":    
+    def Plot2d(self, fignumStart):        
+        # Plot xTrue
+        plt.figure(fignumStart)
+        plt.imshow(self.Theta, interpolation='none')
+        plt.colorbar()    
+        plt.title('xTrue')
+        
+        # Plot the reconstructed result
+        plt.figure()
+        plt.imshow(np.reshape(self.reconResult, self.Theta.shape), interpolation='none')
+        plt.colorbar()
+        plt.title('Reconstructed x')
+        
+        # Plot yErr and its histogram
+        yErr = self.NoisyObs - np.reshape(self._reconstructor.hx, self.NoisyObs.shape)
+        plt.figure()
+        plt.imshow(yErr, interpolation='none')
+        plt.colorbar()
+        plt.title('yErr')
+                
+        plt.figure()
+        plt.hist(yErr.flat, 20)
+        plt.title('Histogram of yErr')       
+    
+        plt.show()
+        
+if __name__ == "__main__": 
+    EXPERIMENT_DESC = 'mrfm2d'   
+    SNRDB  = 20
+    IMAGESHAPE = (32, 32); #(32, 32, 14) 
+    
     iterEvaluator = McmcIterationEvaluator(ComputeEnvironment.EPS, 
-                                           (42, 42), # Must be the same as the image size in ex.experimentObj
-                                           None,
-                                           10,
-                                           None,
-                                           np.array((300, 1000))
-                                           #np.arange(100, 1000, 100)
-                                           #np.arange(1000)
+                                           IMAGESHAPE, # Must be the same as the image size in ex.experimentObj
+                                           xTrue = None,
+                                           xFigureNum = -1,
+                                           y = None,
+                                           countIterationDisplaySet = np.array((300, 1000)),
+                                           bVerbose = True
                                            )
-    ex = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, 20)
-    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise('mrfm2d', 
-                                                             {AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: ex.snrDb}
+    
+    ex = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, SNRDB)
+    
+    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
+                                                             EXPERIMENT_DESC, 
+                                                             {
+                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: ex.snrDb,
+                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: IMAGESHAPE
+                                                              }
                                                              )
     
     ex.RunExample()
+    
+    print("Took {0}s".format(ex.TimingMs/1.0e3))
           
-    plt.show()  
+      
     
