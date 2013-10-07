@@ -93,29 +93,31 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
 #             xSample = pymc.rtruncated_normal(muInd, 1/etaIndSquared, a=0)[0]            
             xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)[0]
             if (xSample < 0):
-                logging.error("Problem at {0}: {1}, {2}, {3}={4}-{5}, {6}: xSample is {7}".format(ind,
-                                                                                                  etaIndSquared,
-                                                                                                  muInd,
-                                                                                                  muIndComponents[0],
-                                                                                                  -muIndComponents[1],
-                                                                                                  uIndFloat,
-                                                                                                  wInd,                                                                                         
-                                                                                                  xSample))
+                fmtString = "Problem at {0}: {1}, {2}, {3}={4}-{5}, {6}: xSample is {7}"
+                logging.error(fmtString.format(ind,
+                                               etaIndSquared,
+                                               muInd,
+                                               muIndComponents[0],
+                                               -muIndComponents[1],
+                                               uIndFloat,
+                                               wInd,                                                                                         
+                                               xSample))
                 raise ValueError('xSample cannot be negative')          
         else:
             # With probability (1-wInd), generate 0
             xSample = 0
         
         if bLogDebug:
-            logging.debug('      {0}/{1}: {2:.5e}, {3:.5f}={4:.5f}-{5:.5f}, {6:.5e}, {7:.5e}: {8:.5e}'.format(self._samplerIter,
-                                                                                                              ind, 
-                                                                                                              etaIndSquared, 
-                                                                                                              muInd, 
-                                                                                                              muIndComponents[0],
-                                                                                                              -muIndComponents[1],
-                                                                                                              uIndFloat, 
-                                                                                                              wInd, 
-                                                                                                              xSample))
+            fmtString = '      {0}/{1}: {2:.5e}, {3:.5f}={4:.5f}-{5:.5f}, {6:.5e}, {7:.5e}: {8:.5e}'
+            logging.debug(fmtString.format(self._samplerIter,
+                                           ind, 
+                                           etaIndSquared, 
+                                           muInd, 
+                                           muIndComponents[0],
+                                           -muIndComponents[1],
+                                           uIndFloat, 
+                                           wInd, 
+                                           xSample))
             
         return xSample
                              
