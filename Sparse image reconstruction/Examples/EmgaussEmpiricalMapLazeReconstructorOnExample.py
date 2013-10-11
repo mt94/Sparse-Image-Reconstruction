@@ -8,9 +8,10 @@ from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
 from Recon.AbstractInitialEstimator import InitialEstimatorFactory
 from Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
 from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator 
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
 from Systems.Timer import Timer
 
 class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample):
@@ -143,13 +144,16 @@ def RunReconstructor(param):
         
     exReconstructor.RunExample()
         
-    thetaDiff = exReconstructor.Theta - exReconstructor.ThetaEstimated
+    perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, exReconstructor.ThetaEstimated)            
         
     return {
-            'error_l2_norm': np.linalg.norm(thetaDiff.flat, 2),
-            'hyperparameter': exReconstructor.Hyperparameter,      
+            'timing_ms': exReconstructor.TimingMs,
             'termination_reason': exReconstructor.TerminationReason,
-            'timing_ms': exReconstructor.TimingMs   
+            'hyperparameter': exReconstructor.Hyperparameter,                  
+            # Reconstruction performance criteria
+            'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
+            'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()
             }
                 
 if __name__ == "__main__":
@@ -159,32 +163,34 @@ if __name__ == "__main__":
     SNRDB = 20;
     
     # For MAP1
-#     runArgs = [EXPERIMENT_DESC, IMAGESHAPE, SNRDB]        
+    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, SNRDB]        
     # For MAP2
-    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB]
+#    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB]
     mapDesc = {3: 'MAP1', 4: 'MAP2'}[len(runArgs)]  
     
-    bRunPool = True
+    bRunPool = False
     NUMPROC = 4
     NUMTASKS = 10
         
+    fmtString = "{0}: est. hyper.={1}, perf. criteria={2}/{3}/{4}, timing={5:g}s. {6}"
+    
     if not bRunPool:
         mapResult = RunReconstructor(runArgs)
-        print("{0}: est. hyper.={1}, l2 norm recon err={2}, timing={3:g}s. {4}".format(
-                                                                                       mapDesc,
-                                                                                       mapResult['hyperparameter'],
-                                                                                       mapResult['error_l2_norm'],
-                                                                                       mapResult['timing_ms'] / 1.0e3,
-                                                                                       mapResult['termination_reason']
-                                                                                       ))        
+        print(fmtString.format(
+                               mapDesc,
+                               mapResult['hyperparameter'],
+                               mapResult['normalized_l2_error_norm'], mapResult['normalized_detection_error'], mapResult['normalized_l0_norm'],
+                               mapResult['timing_ms'] / 1.0e3,
+                               mapResult['termination_reason']
+                               ))        
     else:
         pool = Pool(processes=NUMPROC)
         resultPool = pool.map(RunReconstructor, [runArgs] * NUMTASKS)
         for aResult in resultPool:
-            print("{0}: est. hyper.={1}, l2 norm recon err={2}, timing={3:g}s. {4}".format(
-                                                                                           mapDesc,
-                                                                                           aResult['hyperparameter'],
-                                                                                           aResult['error_l2_norm'],
-                                                                                           aResult['timing_ms'] / 1.0e3,
-                                                                                           aResult['termination_reason']
-                                                                                           ))        
+            print(fmtString.format(
+                                   mapDesc,
+                                   aResult['hyperparameter'],
+                                   mapResult['normalized_l2_error_norm'], mapResult['normalized_detection_error'], mapResult['normalized_l0_norm'],
+                                   aResult['timing_ms'] / 1.0e3,
+                                   aResult['termination_reason']
+                                   ))        

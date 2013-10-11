@@ -21,8 +21,8 @@ class HyperparameterPick(object):
         except KeyError:
             return None          
               
-    def PlotConvolvedImage2d(self, metricDesc, fignum):
-        """ PlotConvolvedImage2d the specified metric. """
+    def PlotMetricVsStages(self, metricDesc, fignum):
+        """ Plots the specified metric vs. the number of stages """
         if fignum < 1:
             raise ValueError('fignum must be strictly positive')
         metricVec = self._GetMetric(metricDesc)

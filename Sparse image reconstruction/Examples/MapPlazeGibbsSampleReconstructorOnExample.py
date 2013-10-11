@@ -10,6 +10,7 @@ from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
 from Systems.Timer import Timer
 
 class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
@@ -107,27 +108,39 @@ if __name__ == "__main__":
     IMAGESHAPE = (32, 32); #(32, 32, 14) 
     
     iterEvaluator = McmcIterationEvaluator(ComputeEnvironment.EPS, 
-                                           IMAGESHAPE, # Must be the same as the image size in ex.experimentObj
+                                           IMAGESHAPE, # Must be the same as the image size in exReconstructor.experimentObj
                                            xTrue = None,
                                            xFigureNum = -1,
                                            y = None,
                                            countIterationDisplaySet = np.array((300, 1000)),
-                                           bVerbose = True
+                                           bVerbose = False
                                            )
     
-    ex = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, SNRDB)
+    exReconstructor = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, SNRDB)
     
-    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
                                                              EXPERIMENT_DESC, 
                                                              {
-                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: ex.snrDb,
+                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: IMAGESHAPE
                                                               }
                                                              )
     
-    ex.RunExample()
+    exReconstructor.RunExample()
     
-    print("Took {0}s".format(ex.TimingMs/1.0e3))
+    perfCriteria = ReconstructorPerformanceCriteria(
+                                                    exReconstructor.Theta, 
+                                                    np.reshape(exReconstructor.ThetaEstimated, exReconstructor.Theta.shape)
+                                                    )
+    
+    fmtString = "Reconstruction performance criteria: {0}/{1}/{2}, timing={3:g}s."
+    
+    print(fmtString.format(
+                           perfCriteria.NormalizedL2ErrorNorm(),
+                           perfCriteria.NormalizedDetectionError(),
+                           perfCriteria.NormalizedL0Norm(),
+                           exReconstructor.TimingMs / 1.0e3
+                           ))
           
       
     

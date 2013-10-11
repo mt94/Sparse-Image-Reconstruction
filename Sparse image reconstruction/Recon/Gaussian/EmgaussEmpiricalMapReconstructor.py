@@ -30,7 +30,8 @@ class EmgaussEmpiricalMapReconstructor(AbstractEmgaussReconstructor):
 
     def UpdateThresholder(self):
         self.EstimateHyperparameter(self._reconArgs)
-        self._thresholder = self._dynamicThresholdingObj.GetDynamicThreshold(self._hyperparameter, 
+        self._thresholder = self._dynamicThresholdingObj.GetDynamicThreshold(
+                                                                             self._hyperparameter, 
                                                                              alphaVal=self._optimSettingsDict[AbstractEmgaussReconstructor.INPUT_KEY_ALPHA]
                                                                              )
     """ Abstract methods implementation """

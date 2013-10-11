@@ -1,10 +1,10 @@
-from Sim.ImageGeneratorImpl import SparseBinary2dImageGenerator, SparseBinary3dImageGenerator, SparseUniform2dImageGenerator
+from Sim.ImageGeneratorImpl import SparseBinaryImageGenerator, SparseDiscreteImageGenerator, SparseUniformImageGenerator
                         
 class ImageGeneratorFactory(object):
     _concreteImageGenerator = {
-                               'random_binary_2d': SparseBinary2dImageGenerator,
-                               'random_binary_3d': SparseBinary3dImageGenerator,
-                               'random_uniform_2d': SparseUniform2dImageGenerator
+                               'random_binary': SparseBinaryImageGenerator,
+                               'random_discrete': SparseDiscreteImageGenerator,
+                               'random_uniform': SparseUniformImageGenerator
                                }    
     @staticmethod
     def GetImageGenerator(imageGeneratorDesc):

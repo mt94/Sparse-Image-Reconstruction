@@ -53,7 +53,7 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
         return blurEx.Blur
         
     def GetImageGenerator(self):
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary_3d')
+        ig = ImageGeneratorFactory.GetImageGenerator('random_binary')
         # 1 shouldn't be necessary really
         igBorderWidth = [(int(math.ceil((max(suppVec) - min(suppVec))/2.0)) + 1) for suppVec in self._psfSupport[0:2]]
         # Handle the z dimension differently. See also the MrfmBlur.GetBlurPsf method

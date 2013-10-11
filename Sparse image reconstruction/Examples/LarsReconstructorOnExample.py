@@ -13,6 +13,7 @@ from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ComputeEnvironment import ComputeEnvironment
 from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
+from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
 from Systems.Timer import Timer
 
 class LarsReconstructorOnExample(AbstractReconstructorExample):
@@ -134,7 +135,7 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         
         print("Took {0:g}ms".format(self.TimingMs))
             
-    def PlotConvolvedImage2d(self, fignumStart):
+    def PlotMetricVsStages(self, fignumStart):
         experimentObj = self.experimentObj
         
         blurredImageWithNoiseForDisplay = experimentObj.channelChain \
@@ -165,7 +166,7 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         plt.colorbar()
         plt.title('Last estimate of blurred image')
         
-def PlotTheta2d(fignumStart, iterObserver, hyperparameterPick):
+def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest):
     plt.ioff()
      
     plt.figure(fignumStart)
@@ -174,8 +175,7 @@ def PlotTheta2d(fignumStart, iterObserver, hyperparameterPick):
     plt.title('True theta')         
     
     plt.figure(fignumStart + 1)
-    
-    indBest, thetaBest = hyperparameterPick.GetBestEstimate(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, -0.1)    
+        
     # DEBUG
 #     indBest = 0
 #     thetaBest = iterObserver.HistoryEstimate[indBest]
@@ -191,8 +191,8 @@ def PlotTheta2d(fignumStart, iterObserver, hyperparameterPick):
     plt.title('Estimated theta: iter {0}'.format(1 + indBest))      
         
 if __name__ == "__main__":
-    EXPERIMENT_DESC = 'mrfm3d'
-    IMAGESHAPE = (32, 32, 14); #(32, 32)
+    EXPERIMENT_DESC = 'mrfm2d'
+    IMAGESHAPE = (32, 32); #(32, 32, 14)
     SNRDB = 20
     
     MyReconstructorDesc = 'lars_lasso'
@@ -203,24 +203,34 @@ if __name__ == "__main__":
         iterObserver.TrackCriterionL1Sure = True
      
     # Use bRestoreSim for debugging problem cases        
-    ex = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, bRestoreSim=False)
+    exReconstructor = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, bRestoreSim=False)
     # Get the experimental object, which encapsulates the experiment on which to use the LARS reconstructor 
-    ex.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(EXPERIMENT_DESC, 
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(EXPERIMENT_DESC, 
                                                              {
                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: SNRDB,
                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: IMAGESHAPE
                                                               }
                                                              )
-    ex.RunExample()
-    ex.PrintOutputIterations()
+    exReconstructor.RunExample()
+    exReconstructor.PrintOutputIterations()
     
     hparamPick = HyperparameterPick(iterObserver)
-    hparamPick.PlotConvolvedImage2d(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, 1)
+    hparamPick.PlotMetricVsStages(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, 1)
     
-    if len(iterObserver.ThetaTrue.shape) == 2:
-#        ex.PlotConvolvedImage2d(2)        
-        PlotTheta2d(2, iterObserver, hparamPick)    
+    indBest, thetaBest = hparamPick.GetBestEstimate(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, -0.1)
+    
+    perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, np.reshape(thetaBest, exReconstructor.Theta.shape))
+    
+    fmtString = "Reconstruction performance criteria: {0}/{1}/{2}, timing={3:g}s."
+     
+    print(fmtString.format(
+                           perfCriteria.NormalizedL2ErrorNorm(),
+                           perfCriteria.NormalizedDetectionError(),
+                           perfCriteria.NormalizedL0Norm(),
+                           exReconstructor.TimingMs / 1.0e3
+                           ))
+    
+    if len(iterObserver.ThetaTrue.shape) == 2:    
+        PlotTheta2d(2, iterObserver, indBest, thetaBest)    
         plt.show()
                 
-
-    

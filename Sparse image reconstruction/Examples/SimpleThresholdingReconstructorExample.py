@@ -1,4 +1,4 @@
-import numpy as np
+#import numpy as np
 from multiprocessing import Pool
 
 from AbstractReconstructorExample import AbstractReconstructorExample
@@ -11,6 +11,9 @@ from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
+from Systems.Timer import Timer
+
 import Systems.Thresholding as Thresholding
 
 class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
@@ -60,8 +63,6 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
             AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 2e5,
             AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER: emgIterationsObserver,
             AbstractEmgaussReconstructor.INPUT_KEY_TAU: 1 / psfSpectralRadius,
-#            AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / np.sqrt(psfSpectralRadius),
-#            AbstractEmgaussReconstructor.INPUT_KEY_ESTIMATE_HYPERPARAMETERS_ITERATIONS_INTERVAL: 500
         }
         
         # Create the reconstructor object
@@ -71,15 +72,16 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         reconstructor = clsReconstructor(optimSettingsDict, clsThresholding().Apply)
         
         # Index the first element, since the Estimate method returns a tuple
-        self._thetaEstimated = reconstructor.Estimate(y,
-                                                      ConvolutionMatrixUsingPsf(psfRepH),
-                                                      InitialEstimatorFactory.GetInitialEstimator('Hty')
-                                                                             .GetInitialEstimate(y, psfRepH) 
-                                                      )[0]
+        with Timer() as t:
+            self._thetaEstimated = reconstructor.Estimate(y,
+                                                          ConvolutionMatrixUsingPsf(psfRepH),
+                                                          InitialEstimatorFactory.GetInitialEstimator('Hty')
+                                                                                 .GetInitialEstimate(y, psfRepH) 
+                                                          )[0]
                                             
-        # Save results
+        # Save run variables
+        self._timingMs = t.msecs
         self._channelChain = self.experimentObj.channelChain
-        
         self._y = y     
         self._theta = self._channelChain.intermediateOutput[0]   
         self._reconstructor = reconstructor    
@@ -95,13 +97,17 @@ def RunAlgo(param):
                                                                            }
                                                                           )  
     exReconstructor.RunExample()
-    
-    thetaDiff = exReconstructor.Theta - exReconstructor.ThetaEstimated
+        
+    perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, exReconstructor.ThetaEstimated)
     
     return {
-            'estimator': estimatorDesc,
-            'error_l2_norm': np.linalg.norm(thetaDiff.flat, 2),            
-            'termination_reason': exReconstructor.TerminationReason            
+            'timing_ms': exReconstructor.TimingMs,
+            'termination_reason': exReconstructor.TerminationReason,
+            'estimator': estimatorDesc,                                     
+            # Reconstruction performance criteria
+            'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
+            'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()                   
             }      
             
 if __name__ == '__main__':            
@@ -123,9 +129,12 @@ if __name__ == '__main__':
                            [SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber_nonneg']]
                           )
     
+    fmtString = "{0}: perf. criteria={1}/{2}/{3}, timing={4:g}s. {5}"
+    
     for aResult in resultPool:
-        print("{0}: l2 norm recon err={1}. {2}".format(
-                                                       aResult['estimator'],                                                       
-                                                       aResult['error_l2_norm'],
-                                                       aResult['termination_reason']
-                                                       ))                        
+        print(fmtString.format(
+                               aResult['estimator'],       
+                               aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],                                                                                                                                            
+                               aResult['timing_ms'] / 1.0e3,
+                               aResult['termination_reason']
+                               ))                        

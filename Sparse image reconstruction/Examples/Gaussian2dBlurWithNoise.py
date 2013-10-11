@@ -32,7 +32,7 @@ class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
         return SyntheticBlur(SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict) 
       
     def GetImageGenerator(self):
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary_2d')
+        ig = ImageGeneratorFactory.GetImageGenerator('random_binary')
         ig.SetParameters(**{ 
                             AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
                             AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,

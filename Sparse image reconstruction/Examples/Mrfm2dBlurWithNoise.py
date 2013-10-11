@@ -37,7 +37,7 @@ class Mrfm2dBlurWithNoise(AbstractBlurWithNoise):
     def GetImageGenerator(self):
         # Get the ImageGenerator after we've constructed the psf. This is b/c we need to figure
         # out the border width so that convolution with the psf doesn't result in spillover.
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary_2d')
+        ig = ImageGeneratorFactory.GetImageGenerator('random_binary')
         igBorderWidth = int(math.ceil((max(self._psfSupport[0]) - min(self._psfSupport[0]))/2.0)) + 1; # 1 shouldn't be necessary really
         ig.SetParameters(**{ 
                             AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
