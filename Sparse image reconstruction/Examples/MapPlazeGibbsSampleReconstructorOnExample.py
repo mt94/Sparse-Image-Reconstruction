@@ -47,7 +47,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
                               McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': 1e-2, 
                                                                                    'alpha1': 1e-2 },
                               McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER: self.iterObserver,                              
-                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: 2000,
+                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: 1000,
                               McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: 300,
                               #McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: 1,
                               McmcConstants.INPUT_KEY_NVERBOSE: 0                 
