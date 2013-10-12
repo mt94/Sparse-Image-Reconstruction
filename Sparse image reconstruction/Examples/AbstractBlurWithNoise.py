@@ -5,16 +5,24 @@ from Channel.ChannelProcessingChain import ChannelProcessingChain
 from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
 
-class AbstractBlurWithNoise(AbstractExample):    
+class AbstractBlurWithNoise(AbstractExample):
+        
+    RUN_ONCE_ONLY = 'run_once_only'
+    
     def __init__(self, optimizer, simParametersDict, desc):
         super(AbstractBlurWithNoise, self).__init__(desc)
         self._optimizer = optimizer
         self._simParametersDict = simParametersDict
         self._psfSupport = None
+        self._bRunAlready = False
         self.blurredImageWithNoise = None
         self.channelChain = None
         self.blurPsfInThetaFrame = None     
         
+    @property
+    def RunAlready(self):
+        return self._bRunAlready
+    
     @property
     def NoiseSigma(self):
         return self._simParametersDict.get(AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA)
@@ -45,7 +53,11 @@ class AbstractBlurWithNoise(AbstractExample):
         raise NotImplementedError('No default abstract method implementation')
         
     """ Abstract method override """                
-    def RunExample(self):               
+    def RunExample(self):
+        
+        if self._simParametersDict.get(AbstractBlurWithNoise.RUN_ONCE_ONLY, False) and self._bRunAlready:
+            raise RuntimeError('RunExample already called')
+                 
         # Construct the blur object first, then the image generator
         blr = self.GetBlur()
         ig = self.GetImageGenerator()
@@ -83,4 +95,7 @@ class AbstractBlurWithNoise(AbstractExample):
             # Update noiseSigma
             self._simParametersDict[AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA] = ng.gaussianNoiseSigma
                     
-        self.blurPsfInThetaFrame = blr.BlurPsfInThetaFrame           
+        self.blurPsfInThetaFrame = blr.BlurPsfInThetaFrame
+                
+        if not self._bRunAlready:
+            self._bRunAlready = True           

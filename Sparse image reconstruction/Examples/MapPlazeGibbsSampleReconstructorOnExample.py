@@ -30,7 +30,8 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         if (self.experimentObj is None):
             raise NameError('experimentObj is undefined')
         
-        self.experimentObj.RunExample() 
+        if not self.experimentObj.RunAlready:
+            self.experimentObj.RunExample() 
                         
         xTrue = self.experimentObj.channelChain.intermediateOutput[0]        
         y = self.experimentObj.blurredImageWithNoise

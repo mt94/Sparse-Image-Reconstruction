@@ -36,12 +36,15 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         
     def _RunExperiment(self):
         if (not self.bRestoreSim):
+            # Don't restore the experiment object from persistent storage
             if self.experimentObj is None:
-                raise NameError('experimentObj is undefined')                 
-            self.experimentObj.RunExample()      
+                raise NameError('experimentObj is undefined')   
+            if not self.experimentObj.RunAlready:              
+                self.experimentObj.RunExample()      
             if LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE:      
                 pickle.dump(self.experimentObj, open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'wb'))
         else:        
+            # Restore the experiment object from a file
             if LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE:
                 self.experimentObj = pickle.load(open(LarsReconstructorOnExample.GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE, 'rb')) 
             else:

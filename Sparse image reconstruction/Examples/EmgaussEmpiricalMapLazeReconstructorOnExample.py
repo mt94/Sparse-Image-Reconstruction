@@ -48,8 +48,9 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
         if (self.experimentObj is None):
             raise NameError('experimentObj is undefined')
         
-        # Run the experiment 
-        self.experimentObj.RunExample()
+        # Run the experiment if it hasn't already been run
+        if not self.experimentObj.RunAlready:
+            self.experimentObj.RunExample()
 
         # Get the inputs needed for the reconstructor                
         y = self.experimentObj.blurredImageWithNoise
