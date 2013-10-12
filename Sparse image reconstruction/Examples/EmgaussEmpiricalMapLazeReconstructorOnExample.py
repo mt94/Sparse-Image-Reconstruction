@@ -158,8 +158,8 @@ def RunReconstructor(param):
             }
                 
 if __name__ == "__main__":
-    EXPERIMENT_DESC = 'mrfm3d'
-    IMAGESHAPE = (32, 32, 14);  # (32, 32)
+    EXPERIMENT_DESC = 'mrfm2d'
+    IMAGESHAPE = (32, 32);  # (32, 32, 14) 
     GSUP = 1/np.sqrt(2)
     SNRDB = 20;
     
@@ -169,9 +169,9 @@ if __name__ == "__main__":
 #    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB]
     mapDesc = {3: 'MAP1', 4: 'MAP2'}[len(runArgs)]  
     
-    bRunPool = False
-    NUMPROC = 4
-    NUMTASKS = 10
+    bRunPool = True
+    NUMPROC = 3
+    NUMTASKS = 30
         
     fmtString = "{0}: est. hyper.={1}, perf. criteria={2}/{3}/{4}, timing={5:g}s. {6}"
     
@@ -191,7 +191,7 @@ if __name__ == "__main__":
             print(fmtString.format(
                                    mapDesc,
                                    aResult['hyperparameter'],
-                                   mapResult['normalized_l2_error_norm'], mapResult['normalized_detection_error'], mapResult['normalized_l0_norm'],
+                                   aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
                                    aResult['timing_ms'] / 1.0e3,
                                    aResult['termination_reason']
                                    ))        
