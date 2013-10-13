@@ -73,7 +73,11 @@ class LarsLassoReconstructor(LarsReconstructor):
             if corrHatAbsMismatch > 1.0e-5: # self.EPS*10 is too strict???
                 indCorrHatAbsMaxActual = np.argmax(corrHatAbs)
                 fmtString = "Iteration {0}: Abs corr hats don't match: theory is {1} whereas actual is {2} @ index/indices {3}, |delta| is {4}"
-                raise RuntimeError(fmtString.format(numIter, corrHatAbsMax, corrHatAbsMaxActual, indCorrHatAbsMaxActual, corrHatAbsMismatch))
+#                raise RuntimeError(fmtString.format(numIter, corrHatAbsMax, corrHatAbsMaxActual, indCorrHatAbsMaxActual, corrHatAbsMismatch))
+                warnings.warn(
+                              fmtString.format(numIter, corrHatAbsMax, corrHatAbsMaxActual, indCorrHatAbsMaxActual, corrHatAbsMismatch),
+                              RuntimeWarning
+                              )
                 
             corrHatAbsMaxActualHistory.append(corrHatAbsMaxActual)
             
@@ -88,8 +92,9 @@ class LarsLassoReconstructor(LarsReconstructor):
                     msgBuffer.append('Corr(activeSetActual): n/a')
                                                                                         
             if np.setxor1d(activeSet, activeSetActual).size != 0:
-                # Numerical inaccuracy might result in a difference
-                warnings.warn("Iteration {0}: activeSet and activeSetActual aren't the same.\n".format(numIter) +
+                # Numerical inaccuracy might result in a difference                
+                warnings.warn(
+                              "Iteration {0}: activeSet and activeSetActual aren't the same.\n".format(numIter) +
                               "ActiveSet is {0} vs. ActiveSetActual is {1}".format(activeSet, activeSetActual),
                               RuntimeWarning
                               ) 

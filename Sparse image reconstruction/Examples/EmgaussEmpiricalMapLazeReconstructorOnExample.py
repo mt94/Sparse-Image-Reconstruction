@@ -176,13 +176,13 @@ if __name__ == "__main__":
     fmtString = "{0}: est. hyper.={1}, perf. criteria={2}/{3}/{4}, timing={5:g}s. {6}"
     
     if not bRunPool:
-        mapResult = RunReconstructor(runArgs)
+        singleResult = RunReconstructor(runArgs)
         print(fmtString.format(
                                mapDesc,
-                               mapResult['hyperparameter'],
-                               mapResult['normalized_l2_error_norm'], mapResult['normalized_detection_error'], mapResult['normalized_l0_norm'],
-                               mapResult['timing_ms'] / 1.0e3,
-                               mapResult['termination_reason']
+                               singleResult['hyperparameter'],
+                               singleResult['normalized_l2_error_norm'], singleResult['normalized_detection_error'], singleResult['normalized_l0_norm'],
+                               singleResult['timing_ms'] / 1.0e3,
+                               singleResult['termination_reason']
                                ))        
     else:
         pool = Pool(processes=NUMPROC)

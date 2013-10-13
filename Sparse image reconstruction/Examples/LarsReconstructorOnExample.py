@@ -2,6 +2,7 @@ import cPickle as pickle
 import numpy as np
 import pylab as plt
 import warnings
+from multiprocessing import Pool
 
 from AbstractReconstructorExample import AbstractReconstructorExample
 from BlurWithNoiseFactory import BlurWithNoiseFactory
@@ -23,12 +24,13 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
     
     GAUSSIAN_BLUR_WITH_NOISE_DUMP_FILE = ''; #'c:\\tmp\\LeastAngleRegressionOnExampleGbwn.dump'
     
-    def __init__(self, reconstructorDesc, iterObserver, bTurnOnWarnings=False, bRestoreSim=False):
+    def __init__(self, reconstructorDesc, iterObserver, maxIterations=30, bTurnOnWarnings=False, bRestoreSim=False):
         super(LarsReconstructorOnExample, self).__init__('LARS example')        
         self.reconstructorDesc = reconstructorDesc
         self.iterObserver = iterObserver
         self.bTurnOnWarnings = bTurnOnWarnings
         self.bRestoreSim = bRestoreSim 
+        self.maxIterations = maxIterations
         
         # Contains a dictionary of the last iteration of LARS. Does not necessarily correspond
         # to the estimated theta.
@@ -66,7 +68,7 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         self.iterObserver.MuTrue = np.array(muTrue)
         
         optimSettingsDict = { 
-                              LarsConstants.INPUT_KEY_MAX_ITERATIONS: 30,
+                              LarsConstants.INPUT_KEY_MAX_ITERATIONS: self.maxIterations,
                               LarsConstants.INPUT_KEY_EPS: ComputeEnvironment.EPS,
                               LarsConstants.INPUT_KEY_NVERBOSE: 0,
                               LarsConstants.INPUT_KEY_ENFORCE_ONEATATIME_JOIN: True,
@@ -193,25 +195,22 @@ def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest):
     plt.colorbar()
     plt.title('Estimated theta: iter {0}'.format(1 + indBest))      
         
-if __name__ == "__main__":
-    EXPERIMENT_DESC = 'mrfm2d'
-    IMAGESHAPE = (32, 32); #(32, 32, 14)
-    SNRDB = 20
-    
-    MyReconstructorDesc = 'lars_lasso'
+def RunReconstructor(param, bPlot=False):
+    """ Encapsulate the creation and running of the LARS-LASSO reconstructor """
+    [reconstructorDesc, maxIterations, experimentDesc, imageShape, snrDb] = param
     
     iterObserver = LarsIterationEvaluator(ComputeEnvironment.EPS)
     
-    if MyReconstructorDesc == 'lars_lasso':
+    if reconstructorDesc == 'lars_lasso':
         iterObserver.TrackCriterionL1Sure = True
      
     # Use bRestoreSim for debugging problem cases        
-    exReconstructor = LarsReconstructorOnExample(MyReconstructorDesc, iterObserver, bRestoreSim=False)
+    exReconstructor = LarsReconstructorOnExample(reconstructorDesc, iterObserver, maxIterations, bRestoreSim=False)
     # Get the experimental object, which encapsulates the experiment on which to use the LARS reconstructor 
-    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(EXPERIMENT_DESC, 
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
                                                              {
-                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: SNRDB,
-                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: IMAGESHAPE
+                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
+                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
                                                               }
                                                              )
     exReconstructor.RunExample()
@@ -223,17 +222,41 @@ if __name__ == "__main__":
     indBest, thetaBest = hparamPick.GetBestEstimate(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, -0.1)
     
     perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, np.reshape(thetaBest, exReconstructor.Theta.shape))
-    
-    fmtString = "Reconstruction performance criteria: {0}/{1}/{2}, timing={3:g}s."
-     
-    print(fmtString.format(
-                           perfCriteria.NormalizedL2ErrorNorm(),
-                           perfCriteria.NormalizedDetectionError(),
-                           perfCriteria.NormalizedL0Norm(),
-                           exReconstructor.TimingMs / 1.0e3
-                           ))
-    
-    if len(iterObserver.ThetaTrue.shape) == 2:    
+
+    if (bPlot and (len(iterObserver.ThetaTrue.shape) == 2)):    
         PlotTheta2d(2, iterObserver, indBest, thetaBest)    
         plt.show()
+        
+    return {
+            'timing_ms': exReconstructor.TimingMs,            
+            'ind_best': indBest,                  
+            'x_best': thetaBest,
+            # Reconstruction performance criteria
+            'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
+            'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()
+            }
+            
+if __name__ == "__main__":
+    RECONSTRUCTOR_DESC = 'lars_lasso'
+    MAX_LARS_ITERATIONS = 30
+    EXPERIMENT_DESC = 'mrfm2d'
+    IMAGESHAPE = (32, 32); #(32, 32, 14)
+    SNRDB = 20
+    
+    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGESHAPE, SNRDB]
+    
+    NUMPROC = 3
+    NUMTASKS = 30
+    
+    fmtString = "Best index: {0}/{1}, perf. criteria: {2}/{3}/{4}, timing={5:g}s."
+     
+    pool = Pool(processes=NUMPROC)
+    resultPool = pool.map(RunReconstructor, [runArgs] * NUMTASKS)
+    for aResult in resultPool:
+        print(fmtString.format(
+                               aResult['ind_best'], MAX_LARS_ITERATIONS,                               
+                               aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
+                               aResult['timing_ms'] / 1.0e3                               
+                               ))   
                 
