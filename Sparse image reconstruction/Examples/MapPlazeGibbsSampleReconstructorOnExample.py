@@ -1,5 +1,6 @@
 import numpy as np
 import pylab as plt
+from multiprocessing import Pool
 
 from AbstractReconstructorExample import AbstractReconstructorExample
 from BlurWithNoiseFactory import BlurWithNoiseFactory
@@ -14,17 +15,17 @@ from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCri
 from Systems.Timer import Timer
 
 class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
-
     """ Constants """
     wInit = 0.1
     aInit = 0.1
     varInitMin = 1e-8
     varInitMax = 10
         
-    def __init__(self, iterObserver, snrDb=None):        
+    def __init__(self, iterObserver, optimSettingsDict, snrDb=None):        
         super(MapPlazeGibbsSampleReconstructorOnExample, self).__init__('MAP P-LAZE Gibbs Sampler')
         self.iterObserver = iterObserver
         self.snrDb = snrDb
+        self.optimSettingsDict = optimSettingsDict
     
     def RunExample(self):        
         if (self.experimentObj is None):
@@ -43,14 +44,16 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         self.iterObserver.y = y
         
         print("SIM: SNR is {0} dB => noise var is {1}".format(self.snrDb, (self.experimentObj.NoiseSigma) ** 2))          
-                
+
+        hyperparamPriorAlpha = self.optimSettingsDict.get('prior_alpha', 1e-5)
+        
         optimSettingsDict = { McmcConstants.INPUT_KEY_EPS: ComputeEnvironment.EPS,
-                              McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': 1e-2, 
-                                                                                   'alpha1': 1e-2 },
+                              McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': hyperparamPriorAlpha, 
+                                                                                   'alpha1': hyperparamPriorAlpha },
                               McmcConstants.INPUT_KEY_ITERATIONS_OBSERVER: self.iterObserver,                              
-                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: 1000,
-                              McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: 300,
-                              #McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: 1,
+                              McmcConstants.INPUT_KEY_NUM_ITERATIONS: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_ITERATIONS, 1000),
+                              McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES, 300),
+                              McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD, 1),
                               McmcConstants.INPUT_KEY_NVERBOSE: 0                 
                              }
         reconstructor = MapPlazeGibbsSamplerReconstructor(optimSettingsDict)
@@ -103,13 +106,12 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
     
         plt.show()
         
-if __name__ == "__main__": 
-    EXPERIMENT_DESC = 'mrfm2d'   
-    SNRDB  = 20
-    IMAGESHAPE = (32, 32); #(32, 32, 14) 
-    
+def RunReconstructor(param, bPlot=False):
+    [iterationParams, experimentDesc, imageShape, snrDb] = param
+          
+                                        
     iterEvaluator = McmcIterationEvaluator(ComputeEnvironment.EPS, 
-                                           IMAGESHAPE, # Must be the same as the image size in exReconstructor.experimentObj
+                                           imageShape, # Must be the same as the image size in exReconstructor.experimentObj
                                            xTrue = None,
                                            xFigureNum = -1,
                                            y = None,
@@ -117,13 +119,20 @@ if __name__ == "__main__":
                                            bVerbose = False
                                            )
     
-    exReconstructor = MapPlazeGibbsSampleReconstructorOnExample(iterEvaluator, SNRDB)
+    exReconstructor = MapPlazeGibbsSampleReconstructorOnExample(
+                                                                iterEvaluator,
+                                                                { 
+                                                                 McmcConstants.INPUT_KEY_NUM_ITERATIONS: iterationParams[0],
+                                                                 McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: iterationParams[1]
+                                                                 },
+                                                                snrDb
+                                                                )
     
     exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
-                                                             EXPERIMENT_DESC, 
+                                                             experimentDesc, 
                                                              {
                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: IMAGESHAPE
+                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
                                                               }
                                                              )
     
@@ -133,15 +142,37 @@ if __name__ == "__main__":
                                                     exReconstructor.Theta, 
                                                     np.reshape(exReconstructor.ThetaEstimated, exReconstructor.Theta.shape)
                                                     )
+    return {
+            'timing_ms': exReconstructor.TimingMs,            
+            # Reconstruction performance criteria
+            'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
+            'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()
+            }
     
-    fmtString = "Reconstruction performance criteria: {0}/{1}/{2}, timing={3:g}s."
+            
+if __name__ == "__main__": 
+    EXPERIMENT_DESC = 'mrfm2d'   
+    SNRDB  = 20
+    IMAGESHAPE = (32, 32); #(32, 32, 14) 
     
-    print(fmtString.format(
-                           perfCriteria.NormalizedL2ErrorNorm(),
-                           perfCriteria.NormalizedDetectionError(),
-                           perfCriteria.NormalizedL0Norm(),
-                           exReconstructor.TimingMs / 1.0e3
-                           ))
+    runArgs = [(1000, 300), EXPERIMENT_DESC, IMAGESHAPE, SNRDB]
+    
+    NUMPROC = 3
+    NUMTASKS = 30
+    
+    fmtString = "Iter. param: ({0},{1}), perf. criteria: {2}/{3}/{4}, timing={5:g}s."
+
+    pool = Pool(processes=NUMPROC)
+    resultPool = pool.map(RunReconstructor, [runArgs] * NUMTASKS)
+    
+    for aResult in resultPool:
+        print(fmtString.format(
+                               runArgs[0][0], runArgs[0][1],
+                               aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
+                               aResult['timing_ms'] / 1.0e3                               
+                               )) 
+            
           
       
     

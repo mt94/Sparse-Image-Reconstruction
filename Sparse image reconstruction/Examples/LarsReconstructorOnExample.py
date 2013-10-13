@@ -242,7 +242,7 @@ if __name__ == "__main__":
     MAX_LARS_ITERATIONS = 30
     EXPERIMENT_DESC = 'mrfm2d'
     IMAGESHAPE = (32, 32); #(32, 32, 14)
-    SNRDB = 20
+    SNRDB = 2
     
     runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGESHAPE, SNRDB]
     
