@@ -214,18 +214,18 @@ def RunReconstructor(param, bPlot=False):
                                                               }
                                                              )
     exReconstructor.RunExample()
-    exReconstructor.PrintOutputIterations()
+    #exReconstructor.PrintOutputIterations()
     
     hparamPick = HyperparameterPick(iterObserver)
     hparamPick.PlotMetricVsStages(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, 1)
     
     indBest, thetaBest = hparamPick.GetBestEstimate(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, -0.1)
     
-    perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, np.reshape(thetaBest, exReconstructor.Theta.shape))
-
     if (bPlot and (len(iterObserver.ThetaTrue.shape) == 2)):    
         PlotTheta2d(2, iterObserver, indBest, thetaBest)    
         plt.show()
+            
+    perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, np.reshape(thetaBest, exReconstructor.Theta.shape))
         
     return {
             'timing_ms': exReconstructor.TimingMs,            
@@ -253,6 +253,7 @@ if __name__ == "__main__":
      
     pool = Pool(processes=NUMPROC)
     resultPool = pool.map(RunReconstructor, [runArgs] * NUMTASKS)
+    
     for aResult in resultPool:
         print(fmtString.format(
                                aResult['ind_best'], MAX_LARS_ITERATIONS,                               
