@@ -107,7 +107,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         plt.show()
         
 def RunReconstructor(param, bPlot=False):
-    [iterationParams, experimentDesc, imageShape, snrDb] = param
+    [iterationParams, experimentDesc, imageShape, snrDb, numNonzero] = param
           
                                         
     iterEvaluator = McmcIterationEvaluator(ComputeEnvironment.EPS, 
@@ -132,7 +132,8 @@ def RunReconstructor(param, bPlot=False):
                                                              experimentDesc, 
                                                              {
                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
+                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                                                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
                                                               }
                                                              )
     
@@ -153,10 +154,11 @@ def RunReconstructor(param, bPlot=False):
             
 if __name__ == "__main__": 
     EXPERIMENT_DESC = 'mrfm2d'   
-    SNRDB  = 20
+    SNRDB  = 2
     IMAGESHAPE = (32, 32); #(32, 32, 14) 
+    NUM_NONZERO = 16
     
-    runArgs = [(1000, 300), EXPERIMENT_DESC, IMAGESHAPE, SNRDB]
+    runArgs = [(1000, 300), EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
     NUMPROC = 3
     NUMTASKS = 30

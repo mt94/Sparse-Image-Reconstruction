@@ -71,7 +71,8 @@ if __name__ == "__main__":
     ex = Mrfm2dBlurWithNoise(Mrfm2dBlurWithNoise.GetBlurParameterOptimizer(),
                              { 
                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
-                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (42, 42)
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (42, 42),
+                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 16
                               }
                              )
     ex.RunExample()    
