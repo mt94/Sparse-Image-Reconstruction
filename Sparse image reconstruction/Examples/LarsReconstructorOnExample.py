@@ -197,7 +197,7 @@ def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest):
         
 def RunReconstructor(param, bPlot=False):
     """ Encapsulate the creation and running of the LARS-LASSO reconstructor """
-    [reconstructorDesc, maxIterations, experimentDesc, imageShape, snrDb] = param
+    [reconstructorDesc, maxIterations, experimentDesc, imageShape, snrDb, numNonzero] = param
     
     iterObserver = LarsIterationEvaluator(ComputeEnvironment.EPS)
     
@@ -210,7 +210,8 @@ def RunReconstructor(param, bPlot=False):
     exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
                                                              {
                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
-                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
+                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                                                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
                                                               }
                                                              )
     exReconstructor.RunExample()
@@ -243,8 +244,9 @@ if __name__ == "__main__":
     EXPERIMENT_DESC = 'mrfm2d'
     IMAGESHAPE = (32, 32); #(32, 32, 14)
     SNRDB = 2
+    NUM_NONZERO = 16
     
-    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGESHAPE, SNRDB]
+    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
     NUMPROC = 3
     NUMTASKS = 30
