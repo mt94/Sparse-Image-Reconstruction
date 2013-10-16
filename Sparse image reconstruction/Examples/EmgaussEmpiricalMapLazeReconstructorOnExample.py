@@ -117,11 +117,11 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
         
 def RunReconstructor(param):
     """ Runs the MAP1 or MAP2 algorithm depending on the length of param """
-    if len(param) == 3:
-        [experimentDesc, imageShape, snrDb] = param
+    if len(param) == 4:
+        [experimentDesc, imageShape, snrDb, numNonzero] = param
         exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample('map1', snrDb=snrDb)        
-    elif len(param) == 4:
-        [experimentDesc, imageShape, gSup, snrDb] = param
+    elif len(param) == 5:
+        [experimentDesc, imageShape, gSup, snrDb, numNonzero] = param
         exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample('map2', snrDb=snrDb, r=0, gSup=gSup)        
     else:
         raise NotImplementedError()
@@ -130,14 +130,16 @@ def RunReconstructor(param):
         exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
                                                                               {
                                                                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: exReconstructor.noiseSigma,
-                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
+                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                                                                               AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
                                                                                }
                                                                               )
     elif (exReconstructor.snrDb is not None):
         exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
                                                                               {
                                                                                AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
+                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                                                                               AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
                                                                                }
                                                                               )
     else:
@@ -164,10 +166,10 @@ if __name__ == "__main__":
     SNRDB = 20;
     
     # For MAP1
-    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, SNRDB]        
+    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, SNRDB, 16]        
     # For MAP2
-#    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB]
-    mapDesc = {3: 'MAP1', 4: 'MAP2'}[len(runArgs)]  
+#    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB, 16]
+    mapDesc = {4: 'MAP1', 5: 'MAP2'}[len(runArgs)]  
     
     bRunPool = True
     NUMPROC = 3
