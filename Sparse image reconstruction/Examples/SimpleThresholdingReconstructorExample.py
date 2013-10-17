@@ -26,14 +26,15 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
                               'landweber_nonneg': (EmgaussFixedMstepReconstructor, Thresholding.ThresholdingIdentityNonnegative)
                               }
         
-    def __init__(self, estimatorDesc, noiseSigma=None, snrDb=None):
+    def __init__(self, estimatorDesc, maxIterations=2e5):
         super(SimpleThresholdingReconstructorExample, self).__init__('Simple thresholding reconstructor example')
         if estimatorDesc not in SimpleThresholdingReconstructorExample._concreteReconstructor:
             raise NotImplementedError(estimatorDesc + ' is an unrecognized reconstructor')
         else:
             self.estimatorDesc = estimatorDesc        
-        self.noiseSigma = noiseSigma
-        self.snrDb = snrDb                 
+#        self.noiseSigma = noiseSigma
+#        self.snrDb = snrDb                 
+        self.maxIterations = maxIterations
         
     def RunExample(self):
         if (self.experimentObj is None):
@@ -46,8 +47,8 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         # Get the inputs needed for the reconstructor                
         y = self.experimentObj.blurredImageWithNoise
         psfRepH = self.experimentObj.channelChain.channelBlocks[1].BlurPsfInThetaFrame # Careful not to use H, which is the convolution matrix
-        if (self.noiseSigma is None):
-            self.noiseSigma = self.experimentObj.NoiseSigma        
+#        if (self.noiseSigma is None):
+#            self.noiseSigma = self.experimentObj.NoiseSigma        
 
         emgIterationsObserver = EmgaussIterationsObserver({
                                                            EmgaussIterationsObserver.INPUT_KEY_TERMINATE_COND: EmgaussIterationsObserver.TERMINATE_COND_THETA_DELTA_L2,
@@ -61,7 +62,7 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
                             
         optimSettingsDict = \
         {
-            AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 2e5,
+            AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: self.maxIterations,
             AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER: emgIterationsObserver,
             AbstractEmgaussReconstructor.INPUT_KEY_TAU: 1 / psfSpectralRadius,
         }
@@ -88,13 +89,17 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         self._reconstructor = reconstructor    
         
 def RunAlgo(param):
-    [snrDb, experimentDesc, imageShape, estimatorDesc] = param
-    exReconstructor = SimpleThresholdingReconstructorExample(estimatorDesc, snrDb=snrDb)
+#    [snrDb, experimentDesc, imageShape, estimatorDesc] = param
+    [reconstructorDesc, maxIterations, experimentDesc, imageShape, snrDb, numNonzero] = param
+    
+    exReconstructor = SimpleThresholdingReconstructorExample(reconstructorDesc, maxIterations)
+    
     exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
                                                                           experimentDesc, 
                                                                           {
-                                                                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape
+                                                                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
+                                                                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                                                                           AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
                                                                            }
                                                                           )  
     exReconstructor.RunExample()
@@ -104,7 +109,7 @@ def RunAlgo(param):
     return {
             'timing_ms': exReconstructor.TimingMs,
             'termination_reason': exReconstructor.TerminationReason,
-            'estimator': estimatorDesc,                                     
+            'estimator': reconstructorDesc,                                     
             # Reconstruction performance criteria
             'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
             'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
@@ -117,18 +122,19 @@ if __name__ == '__main__':
     with a non-negative thresholding operation.
     """        
     SNRDB = 20;    
-    EXPERIMENT_DESC = 'mrfm3d'    
-    IMAGESHAPE = (32, 32, 14); #(32, 32)    
+    EXPERIMENT_DESC = 'mrfm2d'    
+    IMAGESHAPE = (32, 32); #(32, 32, 14)    
+    NUM_NONZERO = 8
 
-#    RunAlgo([SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber_nonneg'])
+    runArgsLw = ['landweber', 5e5, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
+    runArgsLwNneg = ['landweber_nonneg', 5e5, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
-    pool = Pool(processes=2)
+    NUMPROC = 3
+    NUMTASKS = 30
     
-    resultPool = pool.map(
-                          RunAlgo, 
-                          [[SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber'], 
-                           [SNRDB, EXPERIMENT_DESC, IMAGESHAPE, 'landweber_nonneg']]
-                          )
+    pool = Pool(processes=NUMPROC)
+    
+    resultPool = pool.map(RunAlgo, [runArgsLw, runArgsLwNneg] * NUMTASKS)
     
     fmtString = "{0}: perf. criteria={1}/{2}/{3}, timing={4:g}s. {5}"
     
