@@ -3,6 +3,7 @@ import math
 import pylab as plt
 
 from AbstractBlurWithNoise import AbstractBlurWithNoise
+import Sim.ImageGeneratorImpl as ImageGeneratorImpl
 from MrfmBlurExample import MrfmBlurExample
 from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.ImageGeneratorFactory import ImageGeneratorFactory 
@@ -44,7 +45,8 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
         super(Mrfm3dBlurWithNoise, self).__init__(optimizer, simParametersDict, '3-d Mrfm blur with additive Gaussian noise example')    
         assert len(self.ImageShape) == 3
         assert self.ImageShape[0] == self.ImageShape[1]; # Constrain the x and y dims to have equal length
-        self.debugMessages = []    
+        self.debugMessages = []
+        self.imageDiscreteValues = []    
             
     """ Abstract method override """
     def GetBlur(self):   
@@ -53,7 +55,7 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
         return blurEx.Blur
         
     def GetImageGenerator(self):
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary')
+        ig = ImageGeneratorFactory.GetImageGenerator(self.ImageType)
         # 1 shouldn't be necessary really
         igBorderWidth = [(int(math.ceil((max(suppVec) - min(suppVec))/2.0)) + 1) for suppVec in self._psfSupport[0:2]]
         # Handle the z dimension differently. See also the MrfmBlur.GetBlurPsf method
@@ -61,12 +63,14 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
                              int(math.ceil(max(self._psfSupport[2]) - min(self._psfSupport[2])) + 1)
                              )
         # Set the parameters for the 3d random binary image generator
-        ig.SetParameters(**{ 
-                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
-                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
-                            AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
-                           }
-                         )
+        parameterDict = { 
+                         AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
+                         AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
+                         AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
+                         }
+        if (len(self.imageDiscreteValues) > 0):
+            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.imageDiscreteValues
+        ig.SetParameters(**parameterDict)                         
         self.debugMessages.append("Border width in image generator is {0}".format(igBorderWidth))           
         return ig
         
@@ -90,9 +94,12 @@ if __name__ == "__main__":
     ex = Mrfm3dBlurWithNoise(Mrfm3dBlurWithNoise.GetBlurParameterOptimizer(),
                              { 
                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
-                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32, 14)
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32, 14),
+                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 8,
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete'
                               }
                              )
+    ex.imageDiscreteValues = [1, 2]
     ex.RunExample()  
     print "\n".join(ex.debugMessages)
      

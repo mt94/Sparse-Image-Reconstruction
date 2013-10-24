@@ -1,11 +1,13 @@
 import pylab as plt
 
 from AbstractBlurWithNoise import AbstractBlurWithNoise
-from Sim.SyntheticBlur import SyntheticBlur
 from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.ImageGeneratorFactory import ImageGeneratorFactory
+import Sim.ImageGeneratorImpl as ImageGeneratorImpl
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from Sim.SyntheticBlur import SyntheticBlur
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
+
 
 class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
     """
@@ -13,6 +15,7 @@ class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
     """
     def __init__(self, simParametersDict):
         super(Gaussian2dBlurWithNoise, self).__init__(None, simParametersDict, 'Gaussian SyntheticBlur with additive Gaussian noise example')
+        self.imageDiscreteValues = []
       
     """ Abstract method override """  
     def GetBlur(self):
@@ -32,20 +35,25 @@ class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
         return SyntheticBlur(SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict) 
       
     def GetImageGenerator(self):
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary')
-        ig.SetParameters(**{ 
-                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
-                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
-                            AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: self._psfSupport[0]
-                           }
-                         )
+        ig = ImageGeneratorFactory.GetImageGenerator(self.ImageType)
+        parameterDict = { 
+                         AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
+                         AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
+                         AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: self._psfSupport[0]
+                         }
+        if (len(self.imageDiscreteValues) > 0):
+            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.imageDiscreteValues        
+        ig.SetParameters(**parameterDict)                         
         return ig
                                                         
 if __name__ == "__main__":    
     ex = Gaussian2dBlurWithNoise({
-                                  AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
-                                  AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32)
+                                  AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 2,
+                                  AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32),
+                                  AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete',
+                                  AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 12                                 
                                   })
+    ex.imageDiscreteValues = [1, -1]
     ex.RunExample()
     
     """ Calculate the spectral radius of H*H^T. Must do this after running the chain,

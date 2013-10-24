@@ -3,9 +3,11 @@ import Channel.ChannelBlock as chb
 
 class AbstractImageGenerator(chb.AbstractChannelBlock):        
     # Input keys
+    INPUT_KEY_IMAGE_TYPE = 'image_type'
     INPUT_KEY_IMAGE_SHAPE = 'image_shape'
     INPUT_KEY_NUM_NONZERO = 'num_nonzero'
     INPUT_KEY_BORDER_WIDTH = 'border_width'
+    
     CHANNEL_BLOCK_TYPE = 'ImageGenerator'
 
     def __init__(self):

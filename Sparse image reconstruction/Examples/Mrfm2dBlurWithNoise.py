@@ -6,6 +6,7 @@ from AbstractBlurWithNoise import AbstractBlurWithNoise
 from MrfmBlurExample import MrfmBlurExample
 from Sim.AbstractImageGenerator import AbstractImageGenerator
 from Sim.ImageGeneratorFactory import ImageGeneratorFactory 
+import Sim.ImageGeneratorImpl as ImageGeneratorImpl
 from Sim.MrfmBlur import MrfmBlur
 from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
 from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
@@ -26,6 +27,7 @@ class Mrfm2dBlurWithNoise(AbstractBlurWithNoise):
     def __init__(self, optimizer, simParametersDict):
         super(Mrfm2dBlurWithNoise, self).__init__(optimizer, simParametersDict, '2-d Mrfm blur with additive Gaussian noise example')
         self.debugMessages = []  
+        self.imageDiscreteValues = []
                                
     """ Abstract method override """
     def GetBlur(self):
@@ -37,14 +39,16 @@ class Mrfm2dBlurWithNoise(AbstractBlurWithNoise):
     def GetImageGenerator(self):
         # Get the ImageGenerator after we've constructed the psf. This is b/c we need to figure
         # out the border width so that convolution with the psf doesn't result in spillover.
-        ig = ImageGeneratorFactory.GetImageGenerator('random_binary')
+        ig = ImageGeneratorFactory.GetImageGenerator(self.ImageType)
         igBorderWidth = int(math.ceil((max(self._psfSupport[0]) - min(self._psfSupport[0]))/2.0)) + 1; # 1 shouldn't be necessary really
-        ig.SetParameters(**{ 
-                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
-                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
-                            AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
-                           }
-                         )
+        parameterDict = { 
+                         AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: self.ImageShape,
+                         AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
+                         AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
+                         }
+        if (len(self.imageDiscreteValues) > 0):
+            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.imageDiscreteValues
+        ig.SetParameters(**parameterDict)                         
         self.debugMessages.append("Border width in image generator is {0}".format(igBorderWidth))           
         return ig
     
@@ -72,9 +76,11 @@ if __name__ == "__main__":
                              { 
                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (42, 42),
-                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 16
+                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 8,
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete',                              
                               }
                              )
+    ex.imageDiscreteValues = [1, 2]
     ex.RunExample()    
     print "\n".join(ex.debugMessages)
     print("Channel block timing [ms]: {0}".format(

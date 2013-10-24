@@ -124,7 +124,7 @@ if __name__ == '__main__':
     SNRDB = 20;    
     EXPERIMENT_DESC = 'mrfm2d'    
     IMAGESHAPE = (32, 32); #(32, 32, 14)    
-    NUM_NONZERO = 8
+    NUM_NONZERO = 16
 
     runArgsLw = ['landweber', 5e5, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
     runArgsLwNneg = ['landweber_nonneg', 5e5, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]

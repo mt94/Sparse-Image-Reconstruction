@@ -40,6 +40,14 @@ class AbstractBlurWithNoise(AbstractExample):
         return numNonzero
   
     @property
+    def ImageType(self):
+        try:
+            imageType = self._simParametersDict[AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE]
+        except KeyError:
+            imageType = 'random_binary'
+        return imageType
+    
+    @property
     def ImageShape(self):                           
         return self._simParametersDict[AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE]
      

@@ -74,7 +74,7 @@ class SparseDiscreteImageGenerator(AbstractSparseImageGenerator):
     def SetParameters(self, **kwargs):
         assert INPUT_KEY_DISCRETE_VALUES in kwargs
         self._discreteValues = kwargs[INPUT_KEY_DISCRETE_VALUES]
-        assert len(self._discreteValue) >= 1
+        assert len(self._discreteValues) >= 1
         # Call the base class SetParameters method
         super(SparseDiscreteImageGenerator, self).SetParameters(**kwargs)                          
     # Abstract method override
