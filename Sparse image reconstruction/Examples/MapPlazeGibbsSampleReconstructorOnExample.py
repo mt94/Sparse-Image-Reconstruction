@@ -106,10 +106,9 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
     
         plt.show()
         
-def RunReconstructor(param, bPlot=False):
-    [iterationParams, experimentDesc, imageShape, snrDb, numNonzero] = param
-          
-                                        
+def RunReconstructor(param, imageDiscreteNzvalues = None, bPlot=False):
+    [iterationParams, experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
+                                                  
     iterEvaluator = McmcIterationEvaluator(ComputeEnvironment.EPS, 
                                            imageShape, # Must be the same as the image size in exReconstructor.experimentObj
                                            xTrue = None,
@@ -128,14 +127,16 @@ def RunReconstructor(param, bPlot=False):
                                                                 snrDb
                                                                 )
     
-    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
-                                                             experimentDesc, 
-                                                             {
-                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
-                                                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
-                                                              }
-                                                             )
+    blurWithNoiseParams = {
+                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: imageType,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                           AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero                           
+                           }
+    if ((imageDiscreteNzvalues is not None) and (len(imageDiscreteNzvalues) > 0)):
+        blurWithNoiseParams[AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES] = imageDiscreteNzvalues     
+    
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
     
     exReconstructor.RunExample()
     
@@ -155,10 +156,11 @@ def RunReconstructor(param, bPlot=False):
 if __name__ == "__main__": 
     EXPERIMENT_DESC = 'mrfm2d'   
     SNRDB  = 2
+    IMAGETYPE = 'random_binary'
     IMAGESHAPE = (32, 32); #(32, 32, 14) 
     NUM_NONZERO = 16
     
-    runArgs = [(1000, 300), EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
+    runArgs = [(1000, 300), EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
     NUMPROC = 3
     NUMTASKS = 30
@@ -174,7 +176,4 @@ if __name__ == "__main__":
                                aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
                                aResult['timing_ms'] / 1.0e3                               
                                )) 
-            
-          
-      
-    
+                            

@@ -1,4 +1,4 @@
-import numpy as np
+import math
 from multiprocessing import Pool
 
 from AbstractReconstructorExample import AbstractReconstructorExample
@@ -76,7 +76,7 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
             AbstractEmgaussReconstructor.INPUT_KEY_MAX_ITERATIONS: 2e5,
             AbstractEmgaussReconstructor.INPUT_KEY_ITERATIONS_OBSERVER: emgIterationsObserver,
             AbstractEmgaussReconstructor.INPUT_KEY_TAU: 1 / psfSpectralRadius,
-            AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / np.sqrt(psfSpectralRadius),
+            AbstractEmgaussReconstructor.INPUT_KEY_ALPHA: self.noiseSigma / math.sqrt(psfSpectralRadius),
             AbstractEmgaussReconstructor.INPUT_KEY_ESTIMATE_HYPERPARAMETERS_ITERATIONS_INTERVAL: 500
         }        
         
@@ -115,33 +115,33 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
             raise NameError('Trying to access uninitialized field')            
         return self._reconstructor.Hyperparameter
         
-def RunReconstructor(param):
-    """ Runs the MAP1 or MAP2 algorithm depending on the length of param """
-    if len(param) == 4:
-        [experimentDesc, imageShape, snrDb, numNonzero] = param
-        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample('map1', snrDb=snrDb)        
-    elif len(param) == 5:
-        [experimentDesc, imageShape, gSup, snrDb, numNonzero] = param
-        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample('map2', snrDb=snrDb, r=0, gSup=gSup)        
+def RunReconstructor(param, imageDiscreteNzvalues = None):
+    """ Runs the MAP1 or MAP2 algorithm depending on the length of param """    
+    if len(param) == 5:
+        mapRtorDesc = 'map1'
+        [experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
+        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample(mapRtorDesc, snrDb=snrDb)        
+    elif len(param) == 6:
+        mapRtorDesc = 'map2'
+        [experimentDesc, imageType, imageShape, snrDb, numNonzero, gSup] = param
+        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample(mapRtorDesc, snrDb=snrDb, r=0, gSup=gSup)        
     else:
         raise NotImplementedError()
     
+    blurWithNoiseParams = {                                                                                                             
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: imageType,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                           AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
+                           }
+    if ((imageDiscreteNzvalues is not None) and (len(imageDiscreteNzvalues) > 0)):
+        blurWithNoiseParams[AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES] = imageDiscreteNzvalues    
+    
     if (exReconstructor.noiseSigma is not None) and (exReconstructor.noiseSigma >= 0):       
-        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
-                                                                              {
-                                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA: exReconstructor.noiseSigma,
-                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
-                                                                               AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
-                                                                               }
-                                                                              )
+        blurWithNoiseParams[AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA] = exReconstructor.noiseSigma
+        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
     elif (exReconstructor.snrDb is not None):
-        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
-                                                                              {
-                                                                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: exReconstructor.snrDb,
-                                                                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
-                                                                               AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
-                                                                               }
-                                                                              )
+        blurWithNoiseParams[AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB] = exReconstructor.snrDb
+        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc,  blurWithNoiseParams)
     else:
         raise NameError('noiseSigma or snrDb must be set') 
         
@@ -150,6 +150,7 @@ def RunReconstructor(param):
     perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, exReconstructor.ThetaEstimated)            
         
     return {
+            'reconstructor_desc': mapRtorDesc,
             'timing_ms': exReconstructor.TimingMs,
             'termination_reason': exReconstructor.TerminationReason,
             'hyperparameter': exReconstructor.Hyperparameter,                  
@@ -161,15 +162,17 @@ def RunReconstructor(param):
                 
 if __name__ == "__main__":
     EXPERIMENT_DESC = 'mrfm2d'
+    IMAGETYPE = 'random_binary'
     IMAGESHAPE = (32, 32);  # (32, 32, 14) 
-    GSUP = 1/np.sqrt(2)
+    GSUP = 1/math.sqrt(2)
     SNRDB = 20;
+    NUM_NONZERO = 16
     
     # For MAP1
-    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, SNRDB, 16]        
+    runArgsMap1 = [EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]        
     # For MAP2
-#    runArgs = [EXPERIMENT_DESC, IMAGESHAPE, GSUP, SNRDB, 16]
-    mapDesc = {4: 'MAP1', 5: 'MAP2'}[len(runArgs)]  
+    runArgsMap2 = [EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO, GSUP]
+    reconstructorDesc = {5: 'MAP1', 6: 'MAP2'}  
     
     bRunPool = True
     NUMPROC = 3
@@ -178,9 +181,9 @@ if __name__ == "__main__":
     fmtString = "{0}: est. hyper.={1}, perf. criteria={2}/{3}/{4}, timing={5:g}s. {6}"
     
     if not bRunPool:
-        singleResult = RunReconstructor(runArgs)
+        singleResult = RunReconstructor(runArgsMap1)
         print(fmtString.format(
-                               mapDesc,
+                               reconstructorDesc[len(runArgsMap1)],
                                singleResult['hyperparameter'],
                                singleResult['normalized_l2_error_norm'], singleResult['normalized_detection_error'], singleResult['normalized_l0_norm'],
                                singleResult['timing_ms'] / 1.0e3,
@@ -188,10 +191,10 @@ if __name__ == "__main__":
                                ))        
     else:
         pool = Pool(processes=NUMPROC)
-        resultPool = pool.map(RunReconstructor, [runArgs] * NUMTASKS)
+        resultPool = pool.map(RunReconstructor, [runArgsMap1, runArgsMap2] * NUMTASKS)
         for aResult in resultPool:
             print(fmtString.format(
-                                   mapDesc,
+                                   aResult['reconstructor_desc'],
                                    aResult['hyperparameter'],
                                    aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
                                    aResult['timing_ms'] / 1.0e3,

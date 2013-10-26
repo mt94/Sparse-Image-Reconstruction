@@ -195,9 +195,9 @@ def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest):
     plt.colorbar()
     plt.title('Estimated theta: iter {0}'.format(1 + indBest))      
         
-def RunReconstructor(param, bPlot=False):
+def RunReconstructor(param, imageDiscreteNzvalues = None, bPlot=False):
     """ Encapsulate the creation and running of the LARS-LASSO reconstructor """
-    [reconstructorDesc, maxIterations, experimentDesc, imageShape, snrDb, numNonzero] = param
+    [reconstructorDesc, maxIterations, experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
     
     iterObserver = LarsIterationEvaluator(ComputeEnvironment.EPS)
     
@@ -206,14 +206,19 @@ def RunReconstructor(param, bPlot=False):
      
     # Use bRestoreSim for debugging problem cases        
     exReconstructor = LarsReconstructorOnExample(reconstructorDesc, iterObserver, maxIterations, bRestoreSim=False)
-    # Get the experimental object, which encapsulates the experiment on which to use the LARS reconstructor 
-    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, 
-                                                             {
-                                                              AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
-                                                              AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
-                                                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
-                                                              }
-                                                             )
+    
+    # Get the experimental object, which encapsulates the experiment on which to use the LARS reconstructor
+    blurWithNoiseParams = {
+                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: imageType,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                           AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero                           
+                           }
+    if ((imageDiscreteNzvalues is not None) and (len(imageDiscreteNzvalues) > 0)):
+        blurWithNoiseParams[AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES] = imageDiscreteNzvalues   
+            
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
+     
     exReconstructor.RunExample()
     #exReconstructor.PrintOutputIterations()
     
@@ -242,11 +247,12 @@ if __name__ == "__main__":
     RECONSTRUCTOR_DESC = 'lars_lasso'
     MAX_LARS_ITERATIONS = 30
     EXPERIMENT_DESC = 'mrfm2d'
+    IMAGETYPE = 'random_binary'
     IMAGESHAPE = (32, 32); #(32, 32, 14)
     SNRDB = 2
     NUM_NONZERO = 16
     
-    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
+    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
     NUMPROC = 3
     NUMTASKS = 30

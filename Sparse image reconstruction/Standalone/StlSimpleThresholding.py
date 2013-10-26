@@ -1,13 +1,13 @@
 #!/c/Python27/python
 
-import Examples.SimpleThresholdingReconstructorExample as SimpleThresRecon
+import Examples.SimpleThresholdingReconstructorExample as ReconExample
 import multiprocessing as mp
 
 def RunReconstructor_12(param):
-    return SimpleThresRecon.RunReconstructor(param, [1, 2])
+    return ReconExample.RunReconstructor(param, [1, 2])
 
 def RunReconstructor_pm1(param):
-    return SimpleThresRecon.RunReconstructor(param, [1, -1])
+    return ReconExample.RunReconstructor(param, [1, -1])
 
 if __name__ == '__main__':
     
