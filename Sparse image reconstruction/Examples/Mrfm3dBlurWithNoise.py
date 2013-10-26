@@ -45,8 +45,7 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
         super(Mrfm3dBlurWithNoise, self).__init__(optimizer, simParametersDict, '3-d Mrfm blur with additive Gaussian noise example')    
         assert len(self.ImageShape) == 3
         assert self.ImageShape[0] == self.ImageShape[1]; # Constrain the x and y dims to have equal length
-        self.debugMessages = []
-        self.imageDiscreteValues = []    
+        self.debugMessages = []        
             
     """ Abstract method override """
     def GetBlur(self):   
@@ -68,8 +67,8 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
                          AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
                          AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
                          }
-        if (len(self.imageDiscreteValues) > 0):
-            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.imageDiscreteValues
+        if ((self.ImageDiscreteNonzeroValues is not None) and (len(self.ImageDiscreteNonzeroValues) > 0)):
+            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.ImageDiscreteNonzeroValues
         ig.SetParameters(**parameterDict)                         
         self.debugMessages.append("Border width in image generator is {0}".format(igBorderWidth))           
         return ig
@@ -94,12 +93,12 @@ if __name__ == "__main__":
     ex = Mrfm3dBlurWithNoise(Mrfm3dBlurWithNoise.GetBlurParameterOptimizer(),
                              { 
                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete',
                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32, 14),
                               AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 8,
-                              AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete'
+                              AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES: [1, 2]
                               }
-                             )
-    ex.imageDiscreteValues = [1, 2]
+                             )    
     ex.RunExample()  
     print "\n".join(ex.debugMessages)
      

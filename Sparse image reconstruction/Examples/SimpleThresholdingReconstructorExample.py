@@ -1,5 +1,4 @@
-#import numpy as np
-from multiprocessing import Pool
+import multiprocessing as mp
 
 from AbstractReconstructorExample import AbstractReconstructorExample
 from BlurWithNoiseFactory import BlurWithNoiseFactory
@@ -12,9 +11,8 @@ from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 from Systems.PsfNormalizer import PsfMatrixNormNormalizer
 from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
-from Systems.Timer import Timer
-
 import Systems.Thresholding as Thresholding
+from Systems.Timer import Timer
 
 class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
     """
@@ -88,20 +86,22 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         self._theta = self._channelChain.intermediateOutput[0]   
         self._reconstructor = reconstructor    
         
-def RunAlgo(param):
-#    [snrDb, experimentDesc, imageShape, estimatorDesc] = param
-    [reconstructorDesc, maxIterations, experimentDesc, imageShape, snrDb, numNonzero] = param
+def RunAlgo(param, imageDiscreteNzvalues = None):
+    [reconstructorDesc, maxIterations, experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
     
     exReconstructor = SimpleThresholdingReconstructorExample(reconstructorDesc, maxIterations)
     
-    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(
-                                                                          experimentDesc, 
-                                                                          {
-                                                                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
-                                                                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
-                                                                           AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
-                                                                           }
-                                                                          )  
+    blurWithNoiseParams = {
+                           AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: imageType,
+                           AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
+                           AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero                                                                            
+                           }
+    if ((imageDiscreteNzvalues is not None) and (len(imageDiscreteNzvalues) > 0)):
+        blurWithNoiseParams[AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES] = imageDiscreteNzvalues
+    
+    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
+    
     exReconstructor.RunExample()
         
     perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, exReconstructor.ThetaEstimated)
@@ -122,17 +122,18 @@ if __name__ == '__main__':
     with a non-negative thresholding operation.
     """        
     SNRDB = 20;    
-    EXPERIMENT_DESC = 'mrfm2d'    
+    EXPERIMENT_DESC = 'mrfm2d'
+    IMAGETYPE = 'random_binary'    
     IMAGESHAPE = (32, 32); #(32, 32, 14)    
     NUM_NONZERO = 16
 
-    runArgsLw = ['landweber', 5e5, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
-    runArgsLwNneg = ['landweber_nonneg', 5e5, EXPERIMENT_DESC, IMAGESHAPE, SNRDB, NUM_NONZERO]
+    runArgsLw = ['landweber', 5e5, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
+    runArgsLwNneg = ['landweber_nonneg', 5e5, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
     NUMPROC = 3
     NUMTASKS = 30
     
-    pool = Pool(processes=NUMPROC)
+    pool = mp.Pool(processes=NUMPROC)
     
     resultPool = pool.map(RunAlgo, [runArgsLw, runArgsLwNneg] * NUMTASKS)
     

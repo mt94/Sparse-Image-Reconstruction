@@ -14,8 +14,7 @@ class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
     Simulates 2d Gaussian blur and optionally adds AWGN.
     """
     def __init__(self, simParametersDict):
-        super(Gaussian2dBlurWithNoise, self).__init__(None, simParametersDict, 'Gaussian SyntheticBlur with additive Gaussian noise example')
-        self.imageDiscreteValues = []
+        super(Gaussian2dBlurWithNoise, self).__init__(None, simParametersDict, 'Gaussian SyntheticBlur with additive Gaussian noise example')        
       
     """ Abstract method override """  
     def GetBlur(self):
@@ -41,19 +40,19 @@ class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
                          AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: self.NumNonzero,
                          AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: self._psfSupport[0]
                          }
-        if (len(self.imageDiscreteValues) > 0):
-            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.imageDiscreteValues        
+        if ((self.ImageDiscreteNonzeroValues is not None) and (len(self.ImageDiscreteNonzeroValues) > 0)):
+            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.ImageDiscreteNonzeroValues        
         ig.SetParameters(**parameterDict)                         
         return ig
                                                         
 if __name__ == "__main__":    
     ex = Gaussian2dBlurWithNoise({
                                   AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 2,
-                                  AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32),
                                   AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete',
-                                  AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 12                                 
-                                  })
-    ex.imageDiscreteValues = [1, -1]
+                                  AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32),                                  
+                                  AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 12,
+                                  AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES: [1, -1]                          
+                                  })    
     ex.RunExample()
     
     """ Calculate the spectral radius of H*H^T. Must do this after running the chain,

@@ -50,6 +50,10 @@ class AbstractBlurWithNoise(AbstractExample):
     @property
     def ImageShape(self):                           
         return self._simParametersDict[AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE]
+    
+    @property
+    def ImageDiscreteNonzeroValues(self):
+        return self._simParametersDict.get(AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES)
      
     """ Abstract methods """
     @abc.abstractmethod
