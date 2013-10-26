@@ -86,7 +86,7 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         self._theta = self._channelChain.intermediateOutput[0]   
         self._reconstructor = reconstructor    
         
-def RunAlgo(param, imageDiscreteNzvalues = None):
+def RunReconstructor(param, imageDiscreteNzvalues = None):
     [reconstructorDesc, maxIterations, experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
     
     exReconstructor = SimpleThresholdingReconstructorExample(reconstructorDesc, maxIterations)
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     
     pool = mp.Pool(processes=NUMPROC)
     
-    resultPool = pool.map(RunAlgo, [runArgsLw, runArgsLwNneg] * NUMTASKS)
+    resultPool = pool.map(RunReconstructor, [runArgsLw, runArgsLwNneg] * NUMTASKS)
     
     fmtString = "{0}: perf. criteria={1}/{2}/{3}, timing={4:g}s. {5}"
     

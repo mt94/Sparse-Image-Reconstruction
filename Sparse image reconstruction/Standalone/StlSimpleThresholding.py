@@ -3,11 +3,11 @@
 import Examples.SimpleThresholdingReconstructorExample as SimpleThresRecon
 import multiprocessing as mp
 
-def RunAlgo_12(param):
-    return SimpleThresRecon.RunAlgo(param, [1, 2])
+def RunReconstructor_12(param):
+    return SimpleThresRecon.RunReconstructor(param, [1, 2])
 
-def RunAlgo_pm1(param):
-    return SimpleThresRecon.RunAlgo(param, [1, -1])
+def RunReconstructor_pm1(param):
+    return SimpleThresRecon.RunReconstructor(param, [1, -1])
 
 if __name__ == '__main__':
     
@@ -29,7 +29,7 @@ if __name__ == '__main__':
         
     pool = mp.Pool(processes=NUMPROC)
     
-    resultPool = pool.map(RunAlgo_12, [runArgsLw, runArgsLwNneg] * NUMTASKS)
+    resultPool = pool.map(RunReconstructor_12, [runArgsLw, runArgsLwNneg] * NUMTASKS)
     
     fmtString = "{0}: perf. criteria={1}/{2}/{3}, timing={4:g}s. {5}"
     
