@@ -30,11 +30,14 @@ if __name__ == "__main__":
     
     pool = mp.Pool(processes=NUMPROC)
     resultPool = pool.map(RunReconstructor_12, [runArgsMap1, runArgsMap2] * NUMTASKS)
-    for aResult in resultPool:
-        print(fmtString.format(
-                               aResult['reconstructor_desc'],
-                               aResult['hyperparameter'],
-                               aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
-                               aResult['timing_ms'] / 1.0e3,
-                               aResult['termination_reason']
-                               )) 
+    
+    with open('result.txt', 'w+') as fh:
+        for aResult in resultPool:
+            opString = fmtString.format(
+                                        aResult['reconstructor_desc'],
+                                        aResult['hyperparameter'],
+                                        aResult['normalized_l2_error_norm'], aResult['normalized_detection_error'], aResult['normalized_l0_norm'],
+                                        aResult['timing_ms'] / 1.0e3,
+                                        aResult['termination_reason']
+                                        )
+            fh.write(opString + '\n') 

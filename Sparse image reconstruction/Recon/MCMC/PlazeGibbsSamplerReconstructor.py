@@ -128,7 +128,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         hxNext = np.copy(hxLast) 
 
         #/// BEGIN SANITY
-        discrepencyNormTol = self.Eps * 1e3
+        discrepencyNormTol = self.Eps * 1e4
         
         hxLast2 = np.zeros(hxLast.shape)
         for ind in range(M):
