@@ -181,12 +181,22 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         igScaleForA = xLastL1Norm + self.hyperparameterPriorDict['alpha1']
         
         assert (igShapeForA > 0) and (igScaleForA > 0)
-                
-        try:
-            aSample = pymc.rinverse_gamma(igShapeForA, igScaleForA)
-        except (ZeroDivisionError, OverflowError) as e:
-            logging.error("Couldn't generate aSample ~ IG({0},{1}) using n0={2}, n1={3}: {4}".format(igShapeForA, igScaleForA, n0, n1, e.message))
-            raise        
+       
+        bSampleGenerated = False
+        aSample = None
+        
+        for tryInd in range(5, 0, -1):     
+            try:
+                aSample = pymc.rinverse_gamma(igShapeForA, igScaleForA)
+                bSampleGenerated = True                
+            except (ZeroDivisionError, OverflowError) as e:
+                logging.error("Couldn't generate aSample ~ IG({0},{1}) using n0={2}, n1={3}: {4}".format(igShapeForA, igScaleForA, n0, n1, e.message))
+                # Only raise the exception if repeated attempts failed
+                if tryInd == 0:
+                    raise            
+            if bSampleGenerated is True:
+                break
+                    
         logging.info("  Samp. Iter. {0}, generating aSample ~ IG({1:.4f},{2:.4f}) ... {3:.4e}".format(self._samplerIter, igShapeForA, igScaleForA, aSample))
                     
         self.hyperparameterSeq.append({'w' : wSample, 'a' : aSample})        

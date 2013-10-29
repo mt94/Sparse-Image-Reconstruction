@@ -15,7 +15,7 @@ if __name__ == "__main__":
     IMAGETYPE = 'random_discrete'
     IMAGESHAPE = (32, 32);  # (32, 32, 14) 
     GSUP = 1/math.sqrt(2)
-    SNRDB = 20;
+    SNRDB = 20
     NUM_NONZERO = 16
     
     # For MAP1

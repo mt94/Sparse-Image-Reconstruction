@@ -45,7 +45,8 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         
         print("SIM: SNR is {0} dB => noise var is {1}".format(self.snrDb, (self.experimentObj.NoiseSigma) ** 2))          
 
-        hyperparamPriorAlpha = self.optimSettingsDict.get('prior_alpha', 1e-5)
+        # If prior_alpha is too small, sampling an inverse gamma dist won't work.
+        hyperparamPriorAlpha = self.optimSettingsDict.get('prior_alpha', 1e-2)
         
         optimSettingsDict = { McmcConstants.INPUT_KEY_EPS: ComputeEnvironment.EPS,
                               McmcConstants.INPUT_KEY_HYPERPARAMETER_PRIOR_DICT: { 'alpha0': hyperparamPriorAlpha, 
