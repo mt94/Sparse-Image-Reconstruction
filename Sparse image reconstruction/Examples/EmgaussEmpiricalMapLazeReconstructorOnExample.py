@@ -116,15 +116,16 @@ class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample
         return self._reconstructor.Hyperparameter
         
 def RunReconstructor(param, imageDiscreteNzvalues = None):
-    """ Runs the MAP1 or MAP2 algorithm depending on the length of param """    
+    """ 
+    Main function to use when running the reconstructor. This function constructs the
+    experiment object and then calls RunReconstructorUsingExpObj.
+    """    
     if len(param) == 5:
-        mapRtorDesc = 'map1'
-        [experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
-        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample(mapRtorDesc, snrDb=snrDb)        
+        # MAP1        
+        [experimentDesc, imageType, imageShape, snrDb, numNonzero] = param            
     elif len(param) == 6:
-        mapRtorDesc = 'map2'
-        [experimentDesc, imageType, imageShape, snrDb, numNonzero, gSup] = param
-        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample(mapRtorDesc, snrDb=snrDb, r=0, gSup=gSup)        
+        # MAP2        
+        [experimentDesc, imageType, imageShape, snrDb, numNonzero, _gSup] = param            
     else:
         raise NotImplementedError()
     
@@ -133,18 +134,39 @@ def RunReconstructor(param, imageDiscreteNzvalues = None):
                            AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: imageShape,
                            AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: numNonzero
                            }
+    
     if ((imageDiscreteNzvalues is not None) and (len(imageDiscreteNzvalues) > 0)):
         blurWithNoiseParams[AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES] = imageDiscreteNzvalues    
-    
-    if (exReconstructor.noiseSigma is not None) and (exReconstructor.noiseSigma >= 0):       
-        blurWithNoiseParams[AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA] = exReconstructor.noiseSigma
-        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
-    elif (exReconstructor.snrDb is not None):
-        blurWithNoiseParams[AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB] = exReconstructor.snrDb
-        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc,  blurWithNoiseParams)
+
+    # Don't support this anymore
+#    if (exReconstructor.noiseSigma is not None) and (exReconstructor.noiseSigma >= 0):       
+#        blurWithNoiseParams[AbstractAdditiveNoiseGenerator.INPUT_KEY_SIGMA] = exReconstructor.noiseSigma
+#        exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
+
+    if (snrDb is not None):
+        blurWithNoiseParams[AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB] = snrDb
+        experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc,  blurWithNoiseParams)
+        return RunReconstructorUsingExpObj(param, experimentObj)
     else:
         raise NameError('noiseSigma or snrDb must be set') 
-        
+                
+def RunReconstructorUsingExpObj(param, experimentObj):
+    """ 
+    Runs the MAP1 or MAP2 algorithm depending on the length of param. In calling
+    this function, the experiment object is supplied.
+    """    
+    if len(param) == 5:
+        mapRtorDesc = 'map1'
+        [_experimentDesc, _imageType, _imageShape, snrDb, _numNonzero] = param
+        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample(mapRtorDesc, snrDb=snrDb)        
+    elif len(param) == 6:
+        mapRtorDesc = 'map2'
+        [_experimentDesc, _imageType, _imageShape, snrDb, _numNonzero, gSup] = param
+        exReconstructor = EmgaussEmpiricalMapLazeReconstructorOnExample(mapRtorDesc, snrDb=snrDb, r=0, gSup=gSup)        
+    else:
+        raise NotImplementedError()
+    
+    exReconstructor.experimentObj = experimentObj        
     exReconstructor.RunExample()
         
     perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, exReconstructor.ThetaEstimated)            
@@ -157,7 +179,9 @@ def RunReconstructor(param, imageDiscreteNzvalues = None):
             # Reconstruction performance criteria
             'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
             'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
-            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm(),
+            # Return the reconstructor object
+            '_reconstructor': exReconstructor
             }
                 
 if __name__ == "__main__":

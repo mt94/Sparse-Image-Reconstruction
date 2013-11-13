@@ -87,10 +87,8 @@ class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
         self._reconstructor = reconstructor    
         
 def RunReconstructor(param, imageDiscreteNzvalues = None):
-    [reconstructorDesc, maxIterations, experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
-    
-    exReconstructor = SimpleThresholdingReconstructorExample(reconstructorDesc, maxIterations)
-    
+    [_reconstructorDesc, _maxIterations, experimentDesc, imageType, imageShape, snrDb, numNonzero] = param
+            
     blurWithNoiseParams = {
                            AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: snrDb,
                            AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: imageType,
@@ -100,8 +98,14 @@ def RunReconstructor(param, imageDiscreteNzvalues = None):
     if ((imageDiscreteNzvalues is not None) and (len(imageDiscreteNzvalues) > 0)):
         blurWithNoiseParams[AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES] = imageDiscreteNzvalues
     
-    exReconstructor.experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
+    experimentObj = BlurWithNoiseFactory.GetBlurWithNoise(experimentDesc, blurWithNoiseParams)
+    return RunReconstructorUsingExpObj(param, experimentObj)    
+     
+def RunReconstructorUsingExpObj(param, experimentObj):
+    [reconstructorDesc, maxIterations, _experimentDesc, _imageType, _imageShape, _snrDb, _numNonzero] = param
     
+    exReconstructor = SimpleThresholdingReconstructorExample(reconstructorDesc, maxIterations)        
+    exReconstructor.experimentObj = experimentObj    
     exReconstructor.RunExample()
         
     perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, exReconstructor.ThetaEstimated)
@@ -113,9 +117,11 @@ def RunReconstructor(param, imageDiscreteNzvalues = None):
             # Reconstruction performance criteria
             'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
             'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
-            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()                   
-            }      
-            
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm(),
+            # Return the reconstructor object
+            '_reconstructor': exReconstructor               
+            } 
+                
 if __name__ == '__main__':            
     """ 
     Run a comparison between standard Landweber iterations and iterations

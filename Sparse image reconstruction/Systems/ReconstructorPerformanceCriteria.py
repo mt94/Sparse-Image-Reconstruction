@@ -12,10 +12,15 @@ class ReconstructorPerformanceCriteria(object):
         thetaDiff = self._theta - self._thetaEstimated
         return np.linalg.norm(thetaDiff.flat, 2) / np.linalg.norm(self._theta.flat, 2)
     
-    def NormalizedDetectionError(self):
-        M = len(self._theta.flat)
+    def NormalizedDetectionError(self):        
         xorVec = np.logical_xor(self._theta != 0, self._thetaEstimated != 0)
-        return float(xorVec.sum()) / float(M)
+        
+        # Previous definition: deprecated
+#        M = len(self._theta.flat)
+#        return float(xorVec.sum()) / float(M)
+        
+        # New definition
+        return float(xorVec.sum()) / float((self._theta != 0).sum())
     
     def NormalizedL0Norm(self):
         return float((self._thetaEstimated != 0).sum()) / float((self._theta != 0).sum()) 
