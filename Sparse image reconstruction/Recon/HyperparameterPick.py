@@ -28,8 +28,10 @@ class HyperparameterPick(object):
         metricVec = self._GetMetric(metricDesc)
         if (metricVec is not None) and (len(metricVec) > 0):
             plt.figure(fignum)
-            plt.plot(range(len(metricVec)), metricVec)
+            plt.plot(np.arange(len(metricVec)) + 1, metricVec, 'bs-')
             plt.grid()
+            plt.xlabel('LARS iteration')
+            plt.ylabel('SURE criterion')
                         
     def GetBestEstimate(self, metricDesc, metricDeltaThres=None):
         """ 

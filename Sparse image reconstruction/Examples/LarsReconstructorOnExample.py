@@ -31,6 +31,7 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         self.bTurnOnWarnings = bTurnOnWarnings
         self.bRestoreSim = bRestoreSim 
         self.maxIterations = maxIterations
+        self.thetaScalingFactor = 1
         
         # Contains a dictionary of the last iteration of LARS. Does not necessarily correspond
         # to the estimated theta.
@@ -63,7 +64,10 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         
         # Need to set variables in the iteration observer
         self.iterObserver.NoiseSigma = self.experimentObj.NoiseSigma
-        self.iterObserver.ThetaTrue = np.array(self.experimentObj.channelChain.intermediateOutput[0]) * convMatrixObj.zeroMeanedColumnL2norm
+        # Scale ThetaTrue by the factor used to normalize H so that its column vectors have unit norm
+        self.thetaScalingFactor = convMatrixObj.zeroMeanedColumnL2norm
+        self.iterObserver.ThetaTrue = np.array(self.experimentObj.channelChain.intermediateOutput[0]) * self.thetaScalingFactor
+        # Adjust MuTrue as well
         muTrue = convMatrixObj.Multiply(self.iterObserver.ThetaTrue)
         self.iterObserver.MuTrue = np.array(muTrue)
         
@@ -171,13 +175,24 @@ class LarsReconstructorOnExample(AbstractReconstructorExample):
         plt.colorbar()
         plt.title('Last estimate of blurred image')
         
-def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest):
+    def SetThetaEstimated(self, thetaEstimated):
+        """
+        Because this class can't determine the estimated theta -- that's delegated to
+        another object that will decide -- supply a method that sets the estimated theta.
+        """
+        self._thetaEstimated = thetaEstimated
+        
+def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest, thetaScalingFactor = 1):
     plt.ioff()
      
+    # Uncomment these to enable Latex in titles, axes, etc.
+#     plt.rc('text', usetex=True)
+#     plt.rc('font', family='Arial')
+    
     plt.figure(fignumStart)
-    plt.imshow(iterObserver.ThetaTrue, interpolation='none')
+    plt.imshow(iterObserver.ThetaTrue / float(thetaScalingFactor), interpolation='none')
     plt.colorbar()
-    plt.title('True theta')         
+#     plt.title('Pristine image \underline{x}')         
     
     plt.figure(fignumStart + 1)
         
@@ -187,13 +202,14 @@ def PlotTheta2d(fignumStart, iterObserver, indBest, thetaBest):
 
     plt.imshow(
                np.reshape(
-                          thetaBest,                          
+                          thetaBest / float(thetaScalingFactor),                          
                           iterObserver.ThetaTrue.shape
                           ),
                interpolation='none'
                )
     plt.colorbar()
-    plt.title('Estimated theta: iter {0}'.format(1 + indBest))      
+#     plt.title('Reconstruction: \underline{$\hat{x}$}')  
+    print('Reconstruction comes from step {0}'.format(1 + indBest))    
         
 def RunReconstructor(param, imageDiscreteNzvalues = None, bPlot=False):
     """ Encapsulate the creation and running of the LARS-LASSO reconstructor """
@@ -227,8 +243,11 @@ def RunReconstructor(param, imageDiscreteNzvalues = None, bPlot=False):
     
     indBest, thetaBest = hparamPick.GetBestEstimate(LarsIterationEvaluator.OUTPUT_CRITERION_L1_SURE, -0.1)
     
-    if (bPlot and (len(iterObserver.ThetaTrue.shape) == 2)):    
-        PlotTheta2d(2, iterObserver, indBest, thetaBest)    
+    # Save thetaBest in the LarsReconstructorOnExample object
+    exReconstructor.SetThetaEstimated(thetaBest)
+    
+    if (bPlot and (len(iterObserver.ThetaTrue.shape) == 2)):         
+        PlotTheta2d(2, iterObserver, indBest, thetaBest, exReconstructor.thetaScalingFactor)    
         plt.show()
             
     perfCriteria = ReconstructorPerformanceCriteria(exReconstructor.Theta, np.reshape(thetaBest, exReconstructor.Theta.shape))
@@ -240,7 +259,9 @@ def RunReconstructor(param, imageDiscreteNzvalues = None, bPlot=False):
             # Reconstruction performance criteria
             'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
             'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
-            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm(),
+            # Return the reconstructor object
+            '_reconstructor': exReconstructor
             }
             
 if __name__ == "__main__":
@@ -250,7 +271,7 @@ if __name__ == "__main__":
     IMAGETYPE = 'random_binary'
     IMAGESHAPE = (32, 32); #(32, 32, 14)
     SNRDB = 2
-    NUM_NONZERO = 16
+    NUM_NONZERO = 8
     
     runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
     
