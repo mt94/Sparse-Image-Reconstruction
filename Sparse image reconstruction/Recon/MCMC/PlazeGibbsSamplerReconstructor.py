@@ -342,8 +342,8 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             assert len(self.hyperparameterSeq) == (len(self.xSeq) - 1)
                         
         # If elementDesc isn't supported, return an empty list
-        return {'theta': self.xSeq[(self.BurninSamples + 2)::self.ThinningPeriod],
-                'variance': self.varianceSeq[(self.BurninSamples + 2)::self.ThinningPeriod],
-                'hyperparameter': self.hyperparameterSeq[(self.BurninSamples + 1)::self.ThinningPeriod]
+        return {'theta': self.xSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
+                'variance': self.varianceSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
+                'hyperparameter': self.hyperparameterSeq[self.BurninSamples::self.ThinningPeriod]
                 }.get(elementDesc.lower(), [])
                 
