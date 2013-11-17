@@ -59,23 +59,24 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
     
     # Sample xInd|w, a, sigma^2, y, x\xInd
     def DoSamplingSpecificXConditionedAll(self, w, a, ind, fitErrExcludingInd, varLast, bLogDebug=False):
-        assert (a > 0) and (w > 0)                        
-        assert varLast > 0
+        assert (a > 0) and (w > 0) and (varLast > 0)                        
         
-        etaIndSquared = varLast / self._hNormSquared[ind]            
-        dotProduct = np.sum(fitErrExcludingInd * self._h[:, ind])
+        etaIndSquared = varLast / self._hNormSquared[ind]       
+        assert(etaIndSquared > 0)     
+        dotProduct = np.dot(fitErrExcludingInd, self._h[:, ind])
         muIndComponents = (dotProduct / self._hNormSquared[ind], -etaIndSquared / a)
         muInd = sum(muIndComponents)
         
         """
-        When y is big, the simplistic method doesn't work since we're trying to multiply a
-        very small number (which equals 0 due to finite floating point representation) and
-        a very large number. The final result is 0.
+        When y is big, calculating uInd is a challenge since there are numerical issues. We're 
+        trying to multiply a very small number (which equals 0 due to finite floating point
+        representation) and a very large number, which is prone to returning 0.        
         """  
         y = -muInd / PlazeGibbsSamplerReconstructor.CONST_SQRT_2 / math.sqrt(etaIndSquared)
                         
-        uInd = (w / a) * mpmath.sqrt(etaIndSquared) * PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * \
-            mpmath.erfc(y) * mpmath.exp(y * y)
+        uInd = (w / a) * \
+            mpmath.sqrt(etaIndSquared) * PlazeGibbsSamplerReconstructor.CONST_SQRT_HALF_PI * mpmath.erfc(y) * \
+            mpmath.exp(y * y)
                                                
         uIndFloat = float(uInd) # Convert to an ordinary Python float
         assert (uIndFloat > 0)
@@ -91,7 +92,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         if pymc.rbernoulli(wInd):
             # With probability wInd, generate a sample from a truncated Gaussian r.v. (support (0,Inf))
 #             xSample = pymc.rtruncated_normal(muInd, 1/etaIndSquared, a=0)[0]            
-            xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)[0]
+            xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)
             if (xSample < 0):
                 fmtString = "Problem at {0}: {1}, {2}, {3}={4}-{5}, {6}: xSample is {7}"
                 logging.error(fmtString.format(ind,
@@ -151,11 +152,11 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         # Sample each xInd                             
         for ind in range(M):
             hInd = self._h[:, ind]
-            hxExcludingInd = hxNext[:, 0] - xNext[ind] * hInd  # Temp var only needed for each iteration
-            fitErrExcludingInd = y - hxExcludingInd
-            xInd = self.DoSamplingSpecificXConditionedAll(w, a, ind, fitErrExcludingInd, varLast, bLogDebug)
-            xNext[ind] = xInd # Replace the ind-th component with the newly sampled xInd
-            hxNext[:, 0] = hxExcludingInd + xNext[ind] * hInd           
+#             hxExcludingInd = hxNext[:, 0] - xNext[ind] * hInd  # Temp var only needed for each iteration
+            fitErrExcludingInd = y - (hxNext[:, 0] - hInd * xNext[ind])
+            xIndNew = self.DoSamplingSpecificXConditionedAll(w, a, ind, fitErrExcludingInd, varLast, bLogDebug)                        
+            hxNext[:, 0] = hxNext[:, 0] + hInd * (xIndNew - xNext[ind])
+            xNext[ind] = xIndNew; # Replace the ind-th component with the newly sampled xInd            
 
         return (xNext, hxNext)
 
@@ -274,7 +275,11 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
                spspecial.gamma(n1 + aPriorDict['alpha0']) / \
                (np.sum(np.abs(thetaFlat)) + aPriorDict['alpha1']) ** (n1 + aPriorDict['alpha0'])                  
                 
-    """ Implementation of abstract methods from AbstractMcmcSampler """
+    """
+    ## 
+    ## Implementation of abstract methods from AbstractMcmcSampler
+    ## 
+    """
                 
     def SamplerSetup(self, convMatrixObj, initializationDict):
         """ This method must be called before SamplerRun """                
@@ -303,7 +308,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             eInd[ind] = 1   
             tmp = forwardMap(eInd)            
             self._h[:, ind] = np.reshape(tmp, (M,)) 
-            self._hNormSquared[ind] = np.sum(self._h[:,ind] * self._h[:,ind])
+            self._hNormSquared[ind] = np.dot(self._h[:,ind], self._h[:,ind])
             assert self._hNormSquared[ind] > 0
             
         self.hx = np.reshape(forwardMap(x0), (M, 1))

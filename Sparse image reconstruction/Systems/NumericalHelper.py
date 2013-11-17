@@ -28,37 +28,43 @@ class NumericalHelper(object):
     
     """ Min value of v when calling CalculateSmallBigExpressionUsingSeries below """
     _SMALL_BIG_VMIN = 5
-        
-    @staticmethod
-    def CalculateSmallBigExpressionUsingSeries(v, numTerms): 
-        """ 
-        Calculate erfc(v)*exp(v^2) for a large positive v. Try to absorb the large term in the small term by using                     
-        a truncated series expansion or approximation of the small term. If the truncated series expansion is 
-        accurate enough, we should be ok.         
-        """
-        warnings.warn("Approximation method isn't reliable: will be removed", DeprecationWarning)
-        assert v >= NumericalHelper._SMALL_BIG_VMIN
-        assert numTerms >= 1
-        vv = -1 / 2 / (v ** 2)
-        partialSum = 1;
-        for n in range(1, numTerms):
-            partialSum += ((vv ** n) * spmisc.factorial2(2 * n - 1))
-        return partialSum / (v * NumericalHelper._SQRT_PI)
+     
+    #   
+    # /// DEPRECATED
+    #
+#     @staticmethod
+#     def CalculateSmallBigExpressionUsingSeries(v, numTerms): 
+#         """ 
+#         Calculate erfc(v)*exp(v^2) for a large positive v. Try to absorb the large term in the small term by using                     
+#         a truncated series expansion or approximation of the small term. If the truncated series expansion is 
+#         accurate enough, we should be ok.         
+#         """
+#         warnings.warn("Approximation method isn't reliable: will be removed", DeprecationWarning)
+#         assert v >= NumericalHelper._SMALL_BIG_VMIN
+#         assert numTerms >= 1
+#         vv = -1 / 2 / (v ** 2)
+#         partialSum = 1;
+#         for n in range(1, numTerms):
+#             partialSum += ((vv ** n) * spmisc.factorial2(2 * n - 1))
+#         return partialSum / (v * NumericalHelper._SQRT_PI)
     
     """ Coefficients needed by CalculateSmallBigExpressionUsingApprox """
     _APPROX_COEFF_A = [0.254829592, -0.284496736, 1.421413741, -1.453152027, 1.061405429]
     _APPROX_COEFF_P = 0.3275911
-    
-    @staticmethod
-    def CalculateSmallBigExpressionUsingApprox(v):
-        """
-        Calculate erfc(v)*exp(v^2) for a large positive v by using an approx. for erfc(v).
-        """
-        warnings.warn("Approximation method isn't reliable: will be removed", DeprecationWarning)
-        assert v >= NumericalHelper._SMALL_BIG_VMIN
-        t = 1/(1 + NumericalHelper._APPROX_COEFF_P*v)
-        tPowers = [t, t ** 2, t ** 3, t ** 4, t ** 5]
-        return sum(map(operator.mul, NumericalHelper._APPROX_COEFF_A, tPowers))
+
+    #   
+    # /// DEPRECATED
+    #    
+#     @staticmethod
+#     def CalculateSmallBigExpressionUsingApprox(v):
+#         """
+#         Calculate erfc(v)*exp(v^2) for a large positive v by using an approx. for erfc(v).
+#         """
+#         warnings.warn("Approximation method isn't reliable: will be removed", DeprecationWarning)
+#         assert v >= NumericalHelper._SMALL_BIG_VMIN
+#         t = 1/(1 + NumericalHelper._APPROX_COEFF_P*v)
+#         tPowers = [t, t ** 2, t ** 3, t ** 4, t ** 5]
+#         return sum(map(operator.mul, NumericalHelper._APPROX_COEFF_A, tPowers))
     
     """ If both a, b are s.t. |a|, |b| < 7, then use rtruncnorm from Scipy """
     _NORMAL_STANDARD_LIMIT = 7
@@ -133,8 +139,15 @@ class NumericalHelper(object):
     @staticmethod
     def RandomNonnegativeNormal(muValue, varValue):
         """ Generate a sample from the non-negative truncated N(mu,var) """
+
         assert varValue > 0
         sdValue = math.sqrt(varValue)
         a = -muValue/sdValue
-        rv = NumericalHelper.RandomTruncatedStandardNormal(a)
-        return rv*sdValue + muValue
+        
+        # Using RandomTruncatedStandardNorm
+#         rv = NumericalHelper.RandomTruncatedStandardNormal(a)
+#         return rv*sdValue + muValue
+    
+        # Using scipy 
+        rv = truncnorm(a, float('inf'), loc=muValue, scale=sdValue)
+        return rv.rvs()

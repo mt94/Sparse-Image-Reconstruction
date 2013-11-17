@@ -14,6 +14,7 @@ class AbstractReconstructorExample(AbstractExample.AbstractExample):
         
         self._reconstructor = None;     # The reconstructor
         self._thetaEstimated = None;    # Theta as estimated by the reconstructor
+        self._blurOperator = None;      # Blur operator
         self._timingMs = None;          # Timing of algorithm
     
     @property
@@ -46,6 +47,12 @@ class AbstractReconstructorExample(AbstractExample.AbstractExample):
         else:
             # Assume that _thetaEstimated is a numpy array
             return self._thetaEstimated 
+    
+    @property
+    def BlurOperator(self):
+        if (self._blurOperator is None):
+            raise NameError('BlurOperator is uninitialized')
+        return self._blurOperator
     
     @property
     def TerminationReason(self):

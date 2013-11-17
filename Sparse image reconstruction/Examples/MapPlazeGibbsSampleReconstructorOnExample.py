@@ -55,7 +55,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
                               McmcConstants.INPUT_KEY_NUM_ITERATIONS: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_ITERATIONS, 1000),
                               McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES, 300),
                               McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD, 1),
-                              McmcConstants.INPUT_KEY_NVERBOSE: 0                 
+                              McmcConstants.INPUT_KEY_NVERBOSE: 1                 
                              }
         reconstructor = MapPlazeGibbsSamplerReconstructor(optimSettingsDict)
         
@@ -78,6 +78,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         self._timingMs = t.msecs
         self._channelChain = self.experimentObj.channelChain        
         self._theta = self._channelChain.intermediateOutput[0]
+        self._blurOperator = convMatrixObj
         self._y = y                            
         self._reconstructor = reconstructor
         
@@ -90,7 +91,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         
         # Plot the reconstructed result
         plt.figure()
-        plt.imshow(np.reshape(self.reconResult, self.Theta.shape), interpolation='none')
+        plt.imshow(np.reshape(self.ThetaEstimated, self.Theta.shape), interpolation='none')
         plt.colorbar()
         plt.title('Reconstructed x')
         
@@ -150,7 +151,9 @@ def RunReconstructor(param, imageDiscreteNzvalues = None, bPlot=False):
             # Reconstruction performance criteria
             'normalized_l2_error_norm': perfCriteria.NormalizedL2ErrorNorm(),
             'normalized_detection_error': perfCriteria.NormalizedDetectionError(),
-            'normalized_l0_norm': perfCriteria.NormalizedL0Norm()
+            'normalized_l0_norm': perfCriteria.NormalizedL0Norm(),
+            # Return the reconstructor object
+            '_reconstructor': exReconstructor            
             }
     
             
