@@ -19,7 +19,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
     wInit = 0.1
     aInit = 0.1
     varInitMin = 1e-8
-    varInitMax = 10
+    varInitMax = 1
         
     def __init__(self, iterObserver, optimSettingsDict, snrDb=None):        
         super(MapPlazeGibbsSampleReconstructorOnExample, self).__init__('MAP P-LAZE Gibbs Sampler')
@@ -81,6 +81,16 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
         self._blurOperator = convMatrixObj
         self._y = y                            
         self._reconstructor = reconstructor
+        
+    def ReselectEstimate(self, maxNumSamples):
+        """ To be called only after RunExample has been called """
+        if (self.NoisyObs is None) or (self.BlurOperator is None):
+            raise RuntimeError("RunExample method hasn't yet been called")
+        self._thetaEstimated = self._reconstructor.SelectOptimum(
+                                                                 self.NoisyObs,
+                                                                 self.BlurOperator,
+                                                                 maxNumSamples
+                                                                 )
         
     def Plot2d(self, fignumStart):        
         # Plot xTrue

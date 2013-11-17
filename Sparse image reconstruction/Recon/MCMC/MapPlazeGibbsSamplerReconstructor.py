@@ -10,14 +10,14 @@ class MapPlazeGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
         
     """ Implementation of abstract method from AbstractReconstructor """
     
-    def Estimate(self, y, convMatrixObj, initializationDict):
-        """ 
-        Notice that instead of theta0, there's initializationDict. That's because MCMC
-        based methods might need more than just theta0.
+    def SelectOptimum(self, y, convMatrixObj, maxNumSamples):
         """
-        self.SamplerSetup(convMatrixObj, initializationDict)
-        self.SamplerRun(y)        
-        thetaSeq = self.SamplerGet('theta')
+        Before running this, assume that SamplerRun has been called.
+        """
+        if not self.bSamplerRun:
+            return None
+        
+        thetaSeq = self.SamplerGet('theta', maxNumSamples)
         
         posteriorProbSeq = np.zeros((len(thetaSeq),))
         
@@ -33,6 +33,16 @@ class MapPlazeGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
         # Find the theta with the largest posterior and return it
         posteriorProbMaxInd = np.argmax(posteriorProbSeq)
         return thetaSeq[posteriorProbMaxInd]
+        
+    def Estimate(self, y, convMatrixObj, initializationDict, maxNumSamples = float('inf')):
+        """ 
+        Notice that instead of theta0, there's initializationDict. That's because MCMC
+        based methods might need more than just theta0.
+        """
+        self.SamplerSetup(convMatrixObj, initializationDict)
+        self.SamplerRun(y)        
+        return self.SelectOptimum(y, convMatrixObj, maxNumSamples)
+
         
             
             

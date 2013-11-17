@@ -342,7 +342,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             
         self.bSamplerRun = True
             
-    def SamplerGet(self, elementDesc, maxNumElements = float('inf')):
+    def SamplerGet(self, elementDesc, maxNumSamples = float('inf')):
         """ 
         Take into account self.{BurninSamples, ThinningPeriod} when returning xSeq
         """ 
@@ -361,8 +361,8 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
                    }.get(elementDesc.lower(), [])
                    
         # Cap the number of returned samples?
-        if len(samples) > maxNumElements:
-            return samples[:int(maxNumElements)]
+        if len(samples) > maxNumSamples:
+            return samples[:int(maxNumSamples)]
         else:
             return samples
             
