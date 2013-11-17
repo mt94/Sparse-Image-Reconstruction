@@ -55,7 +55,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
                               McmcConstants.INPUT_KEY_NUM_ITERATIONS: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_ITERATIONS, 1000),
                               McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_BURNIN_SAMPLES, 300),
                               McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD, 1),
-                              McmcConstants.INPUT_KEY_NVERBOSE: 1                 
+                              McmcConstants.INPUT_KEY_NVERBOSE: 0         
                              }
         reconstructor = MapPlazeGibbsSamplerReconstructor(optimSettingsDict)
         
