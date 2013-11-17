@@ -1,13 +1,13 @@
 
 # Experiment parameters
 
-EXPERIMENT_DESC = 'mrfm3d'
+EXPERIMENT_DESC = 'mrfm2d'
 IMAGETYPE = 'random_binary'
-IMAGESHAPE = (32, 32, 14); #(32, 32)  
+IMAGESHAPE = (32, 32); #(32, 32, 14)  
 SNRDB = 20
-NUM_NONZERO = 8*5; #16
+NUM_NONZERO = 8; #8*5
 
 # Parallel processing parameters
 
-NUMPROC = 3
-NUMTASKS = 10
+NUMPROC = 4
+NUMTASKS = 30

@@ -5,6 +5,7 @@ import mpmath
 import numpy as np
 import pymc
 import scipy.special as spspecial
+import sys
 
 from AbstractMcmcSampler import AbstractMcmcSampler
 from McmcConstants import McmcConstants
@@ -91,19 +92,31 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         
         if pymc.rbernoulli(wInd):
             # With probability wInd, generate a sample from a truncated Gaussian r.v. (support (0,Inf))
-#             xSample = pymc.rtruncated_normal(muInd, 1/etaIndSquared, a=0)[0]            
-            xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)
-            if (xSample < 0):
-                fmtString = "Problem at {0}: {1}, {2}, {3}={4}-{5}, {6}: xSample is {7}"
-                logging.error(fmtString.format(ind,
-                                               etaIndSquared,
-                                               muInd,
-                                               muIndComponents[0],
-                                               -muIndComponents[1],
-                                               uIndFloat,
-                                               wInd,                                                                                         
-                                               xSample))
-                raise ValueError('xSample cannot be negative')          
+#             xSample = pymc.rtruncated_normal(muInd, 1/etaIndSquared, a=0)[0]
+            try:            
+                xSample = NumericalHelper.RandomNonnegativeNormal(muInd, etaIndSquared)
+            except:
+                fmtString = "Caught exception at {0}: NNN({1}, {2}). Intm. calc.: {3}, {4}, {5}. Exception: {6}"
+                msg = fmtString.format(ind,
+                                       muInd, etaIndSquared,                                                
+                                       muIndComponents[0],
+                                       muIndComponents[1],
+                                       varLast,
+                                       sys.exc_info()[0])
+                logging.error(msg)
+                xSample = 0; # XXX: Due to a numerical problem
+            else:
+                # Check the value of xSample 
+                if (xSample < 0):
+                    fmtString = "Invalid xSample at {0}: NNN({1}, {2}) ~> sample {3}. Intm. calc.: {4}, {5}, {6}"
+                    logging.error(fmtString.format(ind,
+                                                   muInd, etaIndSquared, xSample,                                               
+                                                   muIndComponents[0],
+                                                   muIndComponents[1],
+                                                   varLast))
+                    # Don't throw an exception
+    #                raise ValueError('xSample cannot be negative')
+                    xSample = 0; # XXX: Also due to a numerical problem, but no exception raised   
         else:
             # With probability (1-wInd), generate 0
             xSample = 0
