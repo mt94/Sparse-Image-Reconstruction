@@ -3,6 +3,7 @@
 import Examples.EmgaussEmpiricalMapLazeReconstructorOnExample as ReconExample
 import math
 import multiprocessing as mp
+import StlConstants
 
 def RunReconstructor_12(param):
     return ReconExample.RunReconstructor(param, [1, 2])
@@ -11,25 +12,17 @@ def RunReconstructor_pm1(param):
     return ReconExample.RunReconstructor(param, [1, -1])
 
 if __name__ == "__main__":
-    EXPERIMENT_DESC = 'mrfm2d'
-    IMAGETYPE = 'random_discrete'
-    IMAGESHAPE = (32, 32);  # (32, 32, 14) 
-    GSUP = 1/math.sqrt(2)
-    SNRDB = 20
-    NUM_NONZERO = 16
+    GSUP = 1/math.sqrt(2); # For MAP2 reconstructor
     
     # For MAP1
-    runArgsMap1 = [EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]        
+    runArgsMap1 = [StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]        
     # For MAP2
-    runArgsMap2 = [EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO, GSUP]
-        
-    NUMPROC = 4
-    NUMTASKS = 30
-        
+    runArgsMap2 = [StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO, GSUP]
+                
     fmtString = "{0}: est. hyper.={1}, perf. criteria={2}/{3}/{4}, timing={5:g}s. {6}"
     
-    pool = mp.Pool(processes=NUMPROC)
-    resultPool = pool.map(RunReconstructor_12, [runArgsMap1, runArgsMap2] * NUMTASKS)
+    pool = mp.Pool(processes = StlConstants.NUMPROC)
+    resultPool = pool.map(RunReconstructor_12, [runArgsMap1, runArgsMap2] * StlConstants.NUMTASKS)
     
     with open('result.txt', 'w+') as fh:
         for aResult in resultPool:

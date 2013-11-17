@@ -95,7 +95,7 @@ if __name__ == "__main__":
                               AbstractAdditiveNoiseGenerator.INPUT_KEY_SNRDB: 20,
                               AbstractImageGenerator.INPUT_KEY_IMAGE_TYPE: 'random_discrete',
                               AbstractImageGenerator.INPUT_KEY_IMAGE_SHAPE: (32, 32, 14),
-                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 8,
+                              AbstractImageGenerator.INPUT_KEY_NUM_NONZERO: 8*5,
                               AbstractImageGenerator.INPUT_KEY_IMAGE_DISCRETE_NZVALUES: [1, 2]
                               }
                              )    

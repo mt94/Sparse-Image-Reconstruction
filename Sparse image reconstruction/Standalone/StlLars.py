@@ -2,6 +2,7 @@
 
 import Examples.LarsReconstructorOnExample as ReconExample
 import multiprocessing as mp
+import StlConstants
 
 def RunReconstructor_12(param):
     return ReconExample.RunReconstructor(param, [1, 2])
@@ -12,21 +13,13 @@ def RunReconstructor_pm1(param):
 if __name__ == "__main__":
     RECONSTRUCTOR_DESC = 'lars_lasso'
     MAX_LARS_ITERATIONS = 30
-    EXPERIMENT_DESC = 'mrfm2d'
-    IMAGETYPE = 'random_discrete'
-    IMAGESHAPE = (32, 32); #(32, 32, 14)
-    SNRDB = 2
-    NUM_NONZERO = 16
     
-    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
-    
-    NUMPROC = 4
-    NUMTASKS = 30
-    
+    runArgs = [RECONSTRUCTOR_DESC, MAX_LARS_ITERATIONS, StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]
+        
     fmtString = "Best index: {0}/{1}, perf. criteria: {2}/{3}/{4}, timing={5:g}s."
      
-    pool = mp.Pool(processes=NUMPROC)
-    resultPool = pool.map(RunReconstructor_12, [runArgs] * NUMTASKS)
+    pool = mp.Pool(processes = StlConstants.NUMPROC)
+    resultPool = pool.map(RunReconstructor_12, [runArgs] * StlConstants.NUMTASKS)
     
     with open('result.txt', 'w+') as fh:
         for aResult in resultPool:

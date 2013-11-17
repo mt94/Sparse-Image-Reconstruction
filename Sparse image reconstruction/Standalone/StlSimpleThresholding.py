@@ -2,6 +2,7 @@
 
 import Examples.SimpleThresholdingReconstructorExample as ReconExample
 import multiprocessing as mp
+import StlConstants
 
 def RunReconstructor_12(param):
     return ReconExample.RunReconstructor(param, [1, 2])
@@ -15,21 +16,13 @@ if __name__ == '__main__':
     Run a comparison between standard Landweber iterations and iterations
     with a non-negative thresholding operation.
     """        
-    SNRDB = 20
-    EXPERIMENT_DESC = 'mrfm2d'
-    IMAGETYPE = 'random_discrete'    
-    IMAGESHAPE = (32, 32); #(32, 32, 14)        
-    NUM_NONZERO = 8
     
-    runArgsLw = ['landweber', 5e5, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
-    runArgsLwNneg = ['landweber_nonneg', 5e5, EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]    
+    runArgsLw = ['landweber', 5e5, StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]
+    runArgsLwNneg = ['landweber_nonneg', 5e5, StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]    
+            
+    pool = mp.Pool(processes = StlConstants.NUMPROC)
     
-    NUMPROC = 3
-    NUMTASKS = 30
-        
-    pool = mp.Pool(processes=NUMPROC)
-    
-    resultPool = pool.map(RunReconstructor_12, [runArgsLw, runArgsLwNneg] * NUMTASKS)
+    resultPool = pool.map(RunReconstructor_12, [runArgsLw, runArgsLwNneg] * StlConstants.NUMTASKS)
     
     fmtString = "{0}: perf. criteria={1}/{2}/{3}, timing={4:g}s. {5}"
     
