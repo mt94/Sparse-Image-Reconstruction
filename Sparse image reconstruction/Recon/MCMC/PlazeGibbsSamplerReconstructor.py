@@ -329,7 +329,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             
         self.bSamplerRun = True
             
-    def SamplerGet(self, elementDesc):
+    def SamplerGet(self, elementDesc, maxNumElements = float('inf')):
         """ 
         Take into account self.{BurninSamples, ThinningPeriod} when returning xSeq
         """ 
@@ -342,8 +342,15 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             assert len(self.hyperparameterSeq) == (len(self.xSeq) - 1)
                         
         # If elementDesc isn't supported, return an empty list
-        return {'theta': self.xSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
-                'variance': self.varianceSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
-                'hyperparameter': self.hyperparameterSeq[self.BurninSamples::self.ThinningPeriod]
-                }.get(elementDesc.lower(), [])
+        samples = {'theta': self.xSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
+                   'variance': self.varianceSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
+                   'hyperparameter': self.hyperparameterSeq[self.BurninSamples::self.ThinningPeriod]
+                   }.get(elementDesc.lower(), [])
+                   
+        # Cap the number of returned samples?
+        if len(samples) > maxNumElements:
+            return samples[:int(maxNumElements)]
+        else:
+            return samples
+            
                 
