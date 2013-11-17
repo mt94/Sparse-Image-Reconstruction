@@ -2,7 +2,7 @@
 # Experiment parameters
 
 EXPERIMENT_DESC = 'mrfm2d'
-IMAGETYPE = 'random_binary'
+IMAGETYPE = 'random_discrete'
 IMAGESHAPE = (32, 32); #(32, 32, 14)  
 SNRDB = 20
 NUM_NONZERO = 8; #8*5

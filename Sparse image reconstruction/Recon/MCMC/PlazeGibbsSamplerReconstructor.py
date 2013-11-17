@@ -60,11 +60,11 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
     
     # Sample xInd|w, a, sigma^2, y, x\xInd
     def DoSamplingSpecificXConditionedAll(self, w, a, ind, fitErrExcludingInd, varLast, bLogDebug=False):
-        assert (a > 0) and (w > 0) and (varLast > 0)                        
+        assert (a > 0) and (w >= 0) and (varLast >= 0), __file__ + ': DoSamplingSpecificXConditionedAll: invalid inputs'                        
         
         etaIndSquared = varLast / self._hNormSquared[ind]       
-        assert(etaIndSquared > 0)     
-        dotProduct = np.dot(fitErrExcludingInd, self._h[:, ind])
+        assert (etaIndSquared > 0), __file__ + ': etaIndSquared is not strictly positive'     
+        dotProduct = np.sum(fitErrExcludingInd * self._h[:, ind])
         muIndComponents = (dotProduct / self._hNormSquared[ind], -etaIndSquared / a)
         muInd = sum(muIndComponents)
         
@@ -80,7 +80,14 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             mpmath.exp(y * y)
                                                
         uIndFloat = float(uInd) # Convert to an ordinary Python float
-        assert (uIndFloat > 0)
+        assert (uIndFloat >= 0), __file__ + ': uIndFloat is negative: ' + str(uIndFloat) + \
+            ' w=' + str(w) + \
+            ' a=' + str(a) + \
+            ' etaIndSquared=' + str(etaIndSquared) + \
+            ' y=' + str(y) + \
+            ' muIndComp=(' + str(muIndComponents[0]) + ',' + str(muIndComponents[1]) + ')' + \
+            ' dotProduct=' + str(dotProduct) + \
+            ' hNormSquared=' + str(self._hNormSquared[ind])
         
         if uIndFloat == float('inf'):
             wInd = 1
@@ -187,14 +194,14 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         
         # Sample to get w|xLast and a|xLast,alpha
         wSample = pymc.rbeta(1 + n1, 1 + n0) 
-        assert (wSample >= 0) and (wSample <= 1)               
+        assert (wSample >= 0) and (wSample <= 1), __file__ + ': wSample is out of bounds'               
         logging.info("  Samp. Iter. {0}, generating wSample ~ Beta({1},{2}) ... {3:.5f}".format(self._samplerIter, 1 + n1, 1 + n0, wSample))
         
         igShapeForA = n1 + self.hyperparameterPriorDict['alpha0']
         xLastL1Norm = np.sum(np.abs(xLast))
         igScaleForA = xLastL1Norm + self.hyperparameterPriorDict['alpha1']
         
-        assert (igShapeForA > 0) and (igScaleForA > 0)
+        assert (igShapeForA > 0) and (igScaleForA > 0), "IG shape and scale aren't strictly positive"
        
         bSampleGenerated = False
         aSample = None
@@ -241,8 +248,8 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
                                        })
         
         self.xSeq.append(xNext)
-        assert len(self.xSeq) == len(self.varianceSeq)
-        assert len(self.xSeq) == (len(self.hyperparameterSeq) + 1) 
+        assert len(self.xSeq) == len(self.varianceSeq), __file__ + ': DoSamplingIteration: seq length mismatch #1'
+        assert len(self.xSeq) == (len(self.hyperparameterSeq) + 1), __file__ + ': DoSamplingIteration: seq length mismatch #2'
         
         self.hx = hxNext
 
@@ -258,7 +265,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
                 xLen = xLast.size
             except:
                 raise UnboundLocalError('Unable to determine length of x')
-        assert (w >= 0) and (w <= 1)
+        assert (w >= 0) and (w <= 1), __file__ + ': DoSamplingXPrior: w is out of bounds'
         bIsZero = pymc.rbernoulli(w, (xLen, 1))
         FLaplaceDistInv = lambda x: (-a * np.sign(x - 0.5) * np.log(1 - 2 * np.abs(x - 0.5)))
         plazeSample = FLaplaceDistInv(0.5 + 0.5 * np.random.uniform(size=(xLen, 1))) 
@@ -272,12 +279,12 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         In reality, the variance prior is improper since f(sigma^2) \propto 1/sigma^2. For 
         practical reasons, impose a min/max value.
         """
-        assert (varMin > 0) and (varMin < varMax)
+        assert (varMin > 0) and (varMin < varMax), __file__ + ': DoSamplingPriorVariancePrior: var{Min,Max} are invalid'
         return varMin*(varMax/varMin)**np.random.uniform() 
     
     @staticmethod
     def ComputePosteriorProb(y, convMatrixObj, theta, aPriorDict, eps):
-        assert ('alpha0' in aPriorDict) and ('alpha1' in aPriorDict)
+        assert ('alpha0' in aPriorDict) and ('alpha1' in aPriorDict), __file__ + ': ComputePosteriorProb: missing keys in input dict'
         thetaFlat = np.array(theta.flat)    
         # ???    
 #         if not np.all(thetaFlat > 0):
@@ -310,7 +317,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         self.xSeq.append(np.reshape(x0, (M, 1))) # Reshape x0 into a column array
         
         self.varianceSeq = [] # Contains \sigma^2^{(t)}, t=0, ..., T
-        assert initializationDict['init_var'] >= 0
+        assert initializationDict['init_var'] >= 0, __file__ + ': SamplerSetup: missing init_var in init dict'
         self.varianceSeq.append(initializationDict['init_var'])
         
         self.hyperparameterSeq = [] # Contains hyperparameter estimates, t=1, ..., T                    
@@ -325,7 +332,7 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             tmp = forwardMap(eInd)            
             self._h[:, ind] = np.reshape(tmp, (M,)) 
             self._hNormSquared[ind] = np.dot(self._h[:,ind], self._h[:,ind])
-            assert self._hNormSquared[ind] > 0
+            assert self._hNormSquared[ind] > 0, __file__ + ': SamplerSetup: norm is not strictly positive'
             
         self.hx = np.reshape(forwardMap(x0), (M, 1))
         
@@ -353,9 +360,9 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
             raise StandardError("Doesn't seem like SamplerRun was called")
         else:
             # Run checks to be sure that xSeq, varianceSeq, hyperparameterSeq are of the expected lengths
-            assert len(self.xSeq) == (self.Iterations + self.BurninSamples + 1)
-            assert len(self.varianceSeq) == len(self.xSeq)
-            assert len(self.hyperparameterSeq) == (len(self.xSeq) - 1)
+            assert len(self.xSeq) == (self.Iterations + self.BurninSamples + 1), __file__ + ': SamplerGet: unexpected xSeq length'
+            assert len(self.varianceSeq) == len(self.xSeq), __file__ + ': SamplerGet: unexpected varianceSeq length'
+            assert len(self.hyperparameterSeq) == (len(self.xSeq) - 1), __file__ + ': SamplerGet: unexpected hyperparameterSeq length'
                         
         # If elementDesc isn't supported, return an empty list
         samples = {'theta': self.xSeq[(self.BurninSamples + 1)::self.ThinningPeriod],
