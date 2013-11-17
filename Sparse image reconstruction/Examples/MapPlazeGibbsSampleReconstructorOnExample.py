@@ -57,7 +57,7 @@ class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
                               McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD: self.optimSettingsDict.get(McmcConstants.INPUT_KEY_NUM_THINNING_PERIOD, 1),
                               McmcConstants.INPUT_KEY_NVERBOSE: 0         
                              }
-        reconstructor = MapPlazeGibbsSamplerReconstructor(optimSettingsDict)
+        reconstructor = MapPlazeGibbsSamplerReconstructor(ComputeEnvironment.EPS, optimSettingsDict)
         
         # NOTE: assume theta.shape = y.shape, so M = P
         M = y.size

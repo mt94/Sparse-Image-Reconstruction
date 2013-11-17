@@ -276,13 +276,16 @@ class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor)
         return varMin*(varMax/varMin)**np.random.uniform() 
     
     @staticmethod
-    def ComputePosteriorProb(y, convMatrixObj, theta, aPriorDict):
+    def ComputePosteriorProb(y, convMatrixObj, theta, aPriorDict, eps):
         assert ('alpha0' in aPriorDict) and ('alpha1' in aPriorDict)
-        thetaFlat = theta.flat        
-        if not np.all(thetaFlat > 0):
-            return 0
-        err = y - convMatrixObj.Multiply(theta)
-        n0, n1 = PlazeGibbsSamplerReconstructor.CalculateNumZeros(thetaFlat)
+        thetaFlat = np.array(theta.flat)    
+        # ???    
+#         if not np.all(thetaFlat > 0):
+#             return 0
+        # XXX: Assume that theta is supposed to have the same shape as y. Do the
+        #      reshape in case theta has been vectorized.
+        err = y - convMatrixObj.Multiply(np.reshape(theta, y.shape))        
+        n0, n1 = NumericalHelper.CalculateNumZerosNonzeros(thetaFlat, eps)
         return spspecial.beta(1 + n1, 1 + n0) / \
                np.sum(err * err) * \
                spspecial.gamma(n1 + aPriorDict['alpha0']) / \

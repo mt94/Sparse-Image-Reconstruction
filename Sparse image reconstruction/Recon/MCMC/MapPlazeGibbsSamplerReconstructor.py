@@ -5,8 +5,10 @@ from PlazeGibbsSamplerReconstructor import PlazeGibbsSamplerReconstructor
 class MapPlazeGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
     """ Returns the MAP estimator """
     
-    def __init__(self, optimSettingsDict):
+    def __init__(self, Eps, optimSettingsDict):
         super(MapPlazeGibbsSamplerReconstructor, self).__init__(optimSettingsDict)
+        self.Eps = Eps
+        self.selectionResult = None
         
     """ Implementation of abstract method from AbstractReconstructor """
     
@@ -27,11 +29,13 @@ class MapPlazeGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
                                                               thetaSeq[ind], 
                                                               { 'alpha0': self.hyperparameterPriorDict['alpha0'],
                                                                 'alpha1': self.hyperparameterPriorDict['alpha1']
-                                                               }
+                                                               },
+                                                              self.Eps
                                                               )
             
         # Find the theta with the largest posterior and return it
         posteriorProbMaxInd = np.argmax(posteriorProbSeq)
+        self.selectionResult = (thetaSeq[posteriorProbMaxInd], posteriorProbSeq, posteriorProbMaxInd)
         return thetaSeq[posteriorProbMaxInd]
         
     def Estimate(self, y, convMatrixObj, initializationDict, maxNumSamples = float('inf')):
@@ -41,7 +45,8 @@ class MapPlazeGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
         """
         self.SamplerSetup(convMatrixObj, initializationDict)
         self.SamplerRun(y)        
-        return self.SelectOptimum(y, convMatrixObj, maxNumSamples)
+        self.SelectOptimum(y, convMatrixObj, maxNumSamples)
+        return self.selectionResult[0]
 
         
             
