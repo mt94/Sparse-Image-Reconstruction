@@ -1,3 +1,4 @@
+import numpy as np
 import pylab as plt
 from AbstractExample import AbstractExample
 from Sim.BmagLevelSurface import BmagLevelSurface
@@ -12,6 +13,8 @@ class MrfmBlurExample(AbstractExample):
         self._numPointsInMesh = numPointsInMesh        
         self._blurType = blurType
         self._mrfmBlurObj = None
+        self._blurParametersDict = None
+        self._zRange = None
     
     @property
     def Blur(self):
@@ -28,17 +31,28 @@ class MrfmBlurExample(AbstractExample):
             plt.xlabel('x'), plt.ylabel('y'), plt.colorbar() 
             plt.title(self.exampleDesc)
         else:
+            zDelta = (self._zRange[1] - self._zRange[0]) / (self._numPointsInMesh[1] - 1)
             # 3-d blur
             blurPsfShape = mrfmBlurObj.BlurPsf.shape
             # Plot the 3-d psf by plotting all x-y slices
             for zInd in range(blurPsfShape[2]):
-                plt.figure(fignum + zInd)
-                plt.imshow(mrfmBlurObj.BlurPsf[:, :, zInd], interpolation='none')        
-                plt.xlabel('x'), plt.ylabel('y')
-#                plt.colorbar()                
-                plt.title(self.exampleDesc + ": slice " + str(zInd + 1))     
+                plt.figure(fignum + zInd)  
+                xSpan = self._opti.xSpan
+                xySlice = mrfmBlurObj.BlurPsf[:, :, zInd]
+                plt.imshow(
+                           xySlice, 
+                           interpolation='none',
+                           extent = (-xSpan, xSpan, -xSpan, xSpan)
+                           )        
+                plt.xlabel('x [nm]'), plt.ylabel('y [nm]')
+                if (np.max(xySlice) > np.min(xySlice)):
+                    plt.colorbar()
+                # Print the slice z-pos                
+#                plt.title(self.exampleDesc + ": slice " + str(zInd + 1))                
+                zPosSlice = self._zRange[0] + zInd * zDelta                
+                plt.title('Slice at z position {0:.3f} nm'.format(zPosSlice))     
                         
-        print(self.exampleDesc + ": psf has size: " + str(mrfmBlurObj.BlurPsf.shape))
+        print(self.exampleDesc + ": psf has size: " + str(mrfmBlurObj.BlurPsf.shape))                
                     
     """ Abstract method override """                
     def RunExample(self):     
@@ -53,6 +67,7 @@ class MrfmBlurExample(AbstractExample):
             assert len(self._numPointsInMesh) == 2; # The #pts in the x and y dimensions are the same
             bmLevelSurface = BmagLevelSurface(self._opti.Bext, self._opti.Bres ** 2.0, self._opti.m)
             zMaxInMesh = bmLevelSurface.GetSupport['zSupport'][1] * 1.1
+            self._zRange = (self._opti.z0, zMaxInMesh)
             xyzMesh = MrfmBlur.GetXyzMeshFor3d(self._opti.xSpan, 
                                                self._opti.z0, 
                                                zMaxInMesh,
@@ -70,6 +85,7 @@ class MrfmBlurExample(AbstractExample):
                               MrfmBlur.INPUT_KEY_YMESH: xyzMesh[0],
                               MrfmBlur.INPUT_KEY_ZMESH: xyzMesh[2]
                               }
+        self._blurParametersDict = blurParametersDict; # Save
         
         # Create the MRFM blur      
         mb = MrfmBlur(self._blurType, blurParametersDict)        
