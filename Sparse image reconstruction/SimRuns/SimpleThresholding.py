@@ -2,7 +2,7 @@
 
 import Examples.SimpleThresholdingReconstructorExample as ReconExample
 import multiprocessing as mp
-import StlConstants
+import Constants
 
 def RunReconstructor_12(param):
     return ReconExample.RunReconstructor(param, [1, 2])
@@ -17,12 +17,12 @@ if __name__ == '__main__':
     with a non-negative thresholding operation.
     """        
     
-    runArgsLw = ['landweber', 5e5, StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]
-    runArgsLwNneg = ['landweber_nonneg', 5e5, StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]    
+    runArgsLw = ['landweber', 5e5, Constants.EXPERIMENT_DESC, Constants.IMAGETYPE, Constants.IMAGESHAPE, Constants.SNRDB, Constants.NUM_NONZERO]
+    runArgsLwNneg = ['landweber_nonneg', 5e5, Constants.EXPERIMENT_DESC, Constants.IMAGETYPE, Constants.IMAGESHAPE, Constants.SNRDB, Constants.NUM_NONZERO]    
             
-    pool = mp.Pool(processes = StlConstants.NUMPROC)
+    pool = mp.Pool(processes = Constants.NUMPROC)
     
-    resultPool = pool.map(RunReconstructor_12, [runArgsLw, runArgsLwNneg] * StlConstants.NUMTASKS)
+    resultPool = pool.map(RunReconstructor_12, [runArgsLw, runArgsLwNneg] * Constants.NUMTASKS)
     
     fmtString = "{0}: perf. criteria={1}/{2}/{3}, timing={4:g}s. {5}"
     

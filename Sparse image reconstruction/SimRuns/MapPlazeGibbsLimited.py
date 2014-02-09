@@ -6,7 +6,7 @@ import multiprocessing as mp
 from time import gmtime, strftime
 
 import Examples.MapPlazeGibbsSampleReconstructorOnExample as ReconExample
-import StlConstants
+import Constants
 
 def RunReconstructor_12(param):
     return ReconExample.RunReconstructor(param, [1, 2])
@@ -28,13 +28,13 @@ def CreateIterationsVec(numTasks, maxSimultaneousProcesses):
 if __name__ == "__main__": 
     
     fmtString = "Iter. param: ({0},{1}), perf. criteria: {2}/{3}/{4}, timing={5:g}s."
-    runArgs = [(1000, 300), StlConstants.EXPERIMENT_DESC, StlConstants.IMAGETYPE, StlConstants.IMAGESHAPE, StlConstants.SNRDB, StlConstants.NUM_NONZERO]
+    runArgs = [(1000, 300), Constants.EXPERIMENT_DESC, Constants.IMAGETYPE, Constants.IMAGESHAPE, Constants.SNRDB, Constants.NUM_NONZERO]
         
     with open('result.txt', 'w+') as fh:
         fh.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + '\n')
 
-    NUMPROC = 2; # Ignore StlConstants.NUMPROC
-    processesPerIter = CreateIterationsVec(StlConstants.NUMTASKS, NUMPROC)    
+    NUMPROC = 2; # Ignore Constants.NUMPROC
+    processesPerIter = CreateIterationsVec(Constants.NUMTASKS, NUMPROC)    
     
     for cntIter in range(len(processesPerIter)):
         # Run exactly processesPerIter[cntIter] processes, which should be strictly less than NUMPROC
