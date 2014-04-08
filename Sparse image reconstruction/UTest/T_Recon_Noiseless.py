@@ -60,11 +60,12 @@ class T_Recon_Noiseless(unittest.TestCase):
                                  initialEstimator
                                  )
         thetaEstimated = estimated[0]
-        T_Recon_Noiseless.testMessages.append("Landweber iterations: termination reason: " + emg.TerminationReason)
+        # No need to print this out, we most likely hit the max #iterations
+        #T_Recon_Noiseless.testMessages.append("Landweber iterations: termination reason: " + emg.TerminationReason)
 
         theta = self.channelChain.intermediateOutput[0]
         estimationErrorL2Norm = np.linalg.norm(theta - thetaEstimated, 2)
-        T_Recon_Noiseless.testMessages.append("Landweber iterations: estimation error l_2 norm: " + str(estimationErrorL2Norm))
+        #T_Recon_Noiseless.testMessages.append("Landweber iterations: estimation error l_2 norm: " + str(estimationErrorL2Norm))
         # Loose assertion. Landweber iterations converge to the deconvolution solution,
         # but convergence is slow
         self.assertLess(estimationErrorL2Norm, 1.5)
@@ -87,7 +88,7 @@ class T_Recon_Noiseless(unittest.TestCase):
                                          None)
         theta = self.channelChain.intermediateOutput[0]
         estimationErrorL2Norm = np.linalg.norm(theta - thetaEstimated, 2)
-        T_Recon_Noiseless.testMessages.append("deconvolution test: estimation error l_2 norm: " + str(estimationErrorL2Norm))
+        #T_Recon_Noiseless.testMessages.append("deconvolution test: estimation error l_2 norm: " + str(estimationErrorL2Norm))
         self.assertLess(estimationErrorL2Norm, 1e-9)
 
 #        nFigStart = 4
