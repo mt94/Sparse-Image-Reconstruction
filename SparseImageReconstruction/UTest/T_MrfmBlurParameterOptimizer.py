@@ -1,8 +1,8 @@
 import unittest
 from ..Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
 
-class T_MrfmBlurParameterOptimizer(unittest.TestCase):
 
+class T_MrfmBlurParameterOptimizer(unittest.TestCase):
     def testDefaultValues(self):
         """
         Check that we get the same values as the Matlab function call:
@@ -21,13 +21,13 @@ class T_MrfmBlurParameterOptimizer(unittest.TestCase):
         self.assertEquals(opti.d, None)
         self.assertAlmostEquals(opti.GMax, None)
         self.assertAlmostEquals(opti.xSpan, 10)
-            
+
     def testCalcOptimalValues(self):
         """
-        Check that we get the same values as the Matlab function call: 
+        Check that we get the same values as the Matlab function call:
         >psf_param3(1,3e4,3,1)
         """
-        opti = MrfmBlurParameterOptimizer()        
+        opti = MrfmBlurParameterOptimizer()
         opti.CalcOptimalValues(3e4, 3)
         # Check its values
         self.assertAlmostEquals(opti.Bext, 28834.86571346)
@@ -41,7 +41,7 @@ class T_MrfmBlurParameterOptimizer(unittest.TestCase):
         self.assertEquals(opti.d, 3)
         self.assertAlmostEquals(opti.GMax, 406.902571151)
         self.assertAlmostEquals(opti.xSpan, 4.671542519)
-        
+
     def testCalcOptimalValues2(self):
         """
         Check that we get the same values as the Matlab function call:
@@ -70,9 +70,3 @@ class T_MrfmBlurParameterOptimizer(unittest.TestCase):
         self.assertEquals(opti.d, 6)
         self.assertAlmostEquals(opti.GMax, 125.000469858)
         self.assertAlmostEquals(opti.xSpan, 7.785904198)
-        
-         
-        
-
-        
-    
