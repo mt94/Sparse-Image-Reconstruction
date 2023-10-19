@@ -1,6 +1,6 @@
 import pylab as plt
-from AbstractExample import AbstractExample
-from Systems.NumericalHelper import NumericalHelper
+from .AbstractExample import AbstractExample
+from ..Systems.NumericalHelper import NumericalHelper
 
 class TruncatedStandardNormalVariates(AbstractExample):
     def __init__(self):

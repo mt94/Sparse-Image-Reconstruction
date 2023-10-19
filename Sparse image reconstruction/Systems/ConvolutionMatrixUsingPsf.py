@@ -1,7 +1,7 @@
 import numpy as np
-import Systems.AbstractConvolutionMatrix
+from ..Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
 
-class ConvolutionMatrixUsingPsf(Systems.AbstractConvolutionMatrix.AbstractConvolutionMatrix):
+class ConvolutionMatrixUsingPsf(AbstractConvolutionMatrix):
     def __init__(self, psfRepConvMatrix):
         assert isinstance(psfRepConvMatrix, np.ndarray)
         fftFunction = ConvolutionMatrixUsingPsf.GetFftFunction(psfRepConvMatrix)

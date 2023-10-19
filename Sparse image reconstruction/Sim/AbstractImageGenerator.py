@@ -1,5 +1,5 @@
 import abc
-import Channel.ChannelBlock as chb
+from ..Channel import ChannelBlock as chb
 
 class AbstractImageGenerator(chb.AbstractChannelBlock):        
     # Input keys

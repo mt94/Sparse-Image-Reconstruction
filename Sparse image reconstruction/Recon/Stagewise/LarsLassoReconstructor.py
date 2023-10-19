@@ -1,9 +1,9 @@
 import numpy as np
 import warnings
 
-from LarsConstants import LarsConstants
-from LarsIterationEvaluator import LarsIterationEvaluator
-from LarsReconstructor import LarsReconstructor
+from .LarsConstants import LarsConstants
+from .LarsIterationEvaluator import LarsIterationEvaluator
+from .LarsReconstructor import LarsReconstructor
 
 class LarsLassoReconstructor(LarsReconstructor):
         

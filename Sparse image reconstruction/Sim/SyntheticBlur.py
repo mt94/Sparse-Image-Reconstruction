@@ -1,6 +1,6 @@
 import numpy as np
 from scipy import stats
-from Blur import AbstractBlur
+from .Blur import AbstractBlur
 
 class SyntheticBlur(AbstractBlur):      
     """ 

@@ -1,5 +1,5 @@
 import math
-from MrfmBlur import MrfmBlur
+from .MrfmBlur import MrfmBlur
 
 class MrfmBlurParameterOptimizer(object):
         

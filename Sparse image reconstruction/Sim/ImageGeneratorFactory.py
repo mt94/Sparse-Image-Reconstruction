@@ -1,4 +1,4 @@
-from Sim.ImageGeneratorImpl import SparseBinaryImageGenerator, SparseDiscreteImageGenerator, SparseUniformImageGenerator
+from ..Sim.ImageGeneratorImpl import SparseBinaryImageGenerator, SparseDiscreteImageGenerator, SparseUniformImageGenerator
                         
 class ImageGeneratorFactory(object):
     _concreteImageGenerator = {

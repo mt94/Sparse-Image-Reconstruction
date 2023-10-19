@@ -2,11 +2,11 @@ import math
 import numpy as np
 import unittest
 
-from Recon.MCMC.McmcConstants import McmcConstants
-from Recon.MCMC.PlazeGibbsSamplerReconstructor import PlazeGibbsSamplerReconstructor
-from Sim.SyntheticBlur import SyntheticBlur
-from Systems.ComputeEnvironment import ComputeEnvironment
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ..Recon.MCMC.McmcConstants import McmcConstants
+from ..Recon.MCMC.PlazeGibbsSamplerReconstructor import PlazeGibbsSamplerReconstructor
+from ..Sim.SyntheticBlur import SyntheticBlur
+from ..Systems.ComputeEnvironment import ComputeEnvironment
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class TestGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
     """

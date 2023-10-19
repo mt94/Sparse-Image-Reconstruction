@@ -4,18 +4,18 @@ import pylab as plt
 import warnings
 from multiprocessing import Pool
 
-from AbstractReconstructorExample import AbstractReconstructorExample
-from BlurWithNoiseFactory import BlurWithNoiseFactory
-from Recon.HyperparameterPick import HyperparameterPick
-from Recon.Stagewise.LarsConstants import LarsConstants
-from Recon.Stagewise.LarsIterationEvaluator import LarsIterationEvaluator
-from Recon.Stagewise.LarsReconstructorFactory import LarsReconstructorFactory
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
-from Systems.ComputeEnvironment import ComputeEnvironment
-from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
-from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
-from Systems.Timer import Timer
+from .AbstractReconstructorExample import AbstractReconstructorExample
+from .BlurWithNoiseFactory import BlurWithNoiseFactory
+from ..Recon.HyperparameterPick import HyperparameterPick
+from ..Recon.Stagewise.LarsConstants import LarsConstants
+from ..Recon.Stagewise.LarsIterationEvaluator import LarsIterationEvaluator
+from ..Recon.Stagewise.LarsReconstructorFactory import LarsReconstructorFactory
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Systems.ComputeEnvironment import ComputeEnvironment
+from ..Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
+from ..Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
+from ..Systems.Timer import Timer
 
 class LarsReconstructorOnExample(AbstractReconstructorExample):
     """

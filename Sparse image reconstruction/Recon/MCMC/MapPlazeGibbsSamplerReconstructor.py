@@ -1,6 +1,6 @@
 import numpy as np
 
-from PlazeGibbsSamplerReconstructor import PlazeGibbsSamplerReconstructor
+from .PlazeGibbsSamplerReconstructor import PlazeGibbsSamplerReconstructor
 
 class MapPlazeGibbsSamplerReconstructor(PlazeGibbsSamplerReconstructor):
     """ Returns the MAP estimator """

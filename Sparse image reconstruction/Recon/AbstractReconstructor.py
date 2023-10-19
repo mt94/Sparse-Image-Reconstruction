@@ -1,5 +1,5 @@
 import abc
-import Channel.ChannelBlock as chb
+from ..Channel import ChannelBlock as chb
 
 class AbstractReconstructor(chb.AbstractChannelBlock):
     __metaclass__ = abc.ABCMeta

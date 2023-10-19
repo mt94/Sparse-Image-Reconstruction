@@ -3,8 +3,10 @@
 import multiprocessing as mp
 from time import gmtime, strftime
 
-import Examples.MapPlazeGibbsSampleReconstructorOnExample as ReconExample
-import Constants
+from ..Examples import MapPlazeGibbsSampleReconstructorOnExample as ReconExample
+from .Constants import (EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO,
+                        NUMPROC, NUMTASKS)
+
 
 def RunReconstructor_12(param):
     return ReconExample.RunReconstructor(param, [1, 2])
@@ -14,13 +16,13 @@ def RunReconstructor_pm1(param):
 
 if __name__ == "__main__": 
     
-    runArgs = [(1000, 300), Constants.EXPERIMENT_DESC, Constants.IMAGETYPE, Constants.IMAGESHAPE, Constants.SNRDB, Constants.NUM_NONZERO]
+    runArgs = [(1000, 300), EXPERIMENT_DESC, IMAGETYPE, IMAGESHAPE, SNRDB, NUM_NONZERO]
         
     with open('result.txt', 'w+') as fh:
         fh.write(strftime("%Y-%m-%d %H:%M:%S", gmtime()) + '\n')
         
-    pool = mp.Pool(processes = Constants.NUMPROC)
-    resultPool = pool.map(RunReconstructor_pm1, [runArgs] * Constants.NUMTASKS)
+    pool = mp.Pool(processes = NUMPROC)
+    resultPool = pool.map(RunReconstructor_pm1, [runArgs] * NUMTASKS)
     
     fmtString = "Iter. param: ({0},{1}), perf. criteria: {2}/{3}/{4}, timing={5:g}s."
         

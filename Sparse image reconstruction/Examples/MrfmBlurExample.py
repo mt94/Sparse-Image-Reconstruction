@@ -1,9 +1,9 @@
 import numpy as np
 import pylab as plt
-from AbstractExample import AbstractExample
-from Sim.BmagLevelSurface import BmagLevelSurface
-from Sim.MrfmBlur import MrfmBlur
-from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
+from .AbstractExample import AbstractExample
+from ..Sim.BmagLevelSurface import BmagLevelSurface
+from ..Sim.MrfmBlur import MrfmBlur
+from ..Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
 
 class MrfmBlurExample(AbstractExample):
     def __init__(self, opti, numPointsInMesh, blurType, blurDesc=None):

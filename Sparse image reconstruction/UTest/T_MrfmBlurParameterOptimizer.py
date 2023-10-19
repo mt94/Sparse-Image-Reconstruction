@@ -1,6 +1,5 @@
 import unittest
-from Sim.MrfmBlur import MrfmBlur
-from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
+from ..Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
 
 class T_MrfmBlurParameterOptimizer(unittest.TestCase):
 

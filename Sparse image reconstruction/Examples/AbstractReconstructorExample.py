@@ -1,4 +1,4 @@
-import AbstractExample
+import .AbstractExample
 
 class AbstractReconstructorExample(AbstractExample.AbstractExample):
     def __init__(self, exampleDesc=None):

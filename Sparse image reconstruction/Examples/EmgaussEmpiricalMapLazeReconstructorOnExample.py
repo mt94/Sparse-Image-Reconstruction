@@ -1,18 +1,18 @@
 import math
 from multiprocessing import Pool
 
-from AbstractReconstructorExample import AbstractReconstructorExample
-from BlurWithNoiseFactory import BlurWithNoiseFactory
-from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
-from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
-from Recon.AbstractInitialEstimator import InitialEstimatorFactory
-from Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator 
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
-from Systems.PsfNormalizer import PsfMatrixNormNormalizer
-from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
-from Systems.Timer import Timer
+from .AbstractReconstructorExample import AbstractReconstructorExample
+from .BlurWithNoiseFactory import BlurWithNoiseFactory
+from ..Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
+from ..Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
+from ..Recon.AbstractInitialEstimator import InitialEstimatorFactory
+from ..Recon.Gaussian.EmgaussEmpiricalMapLazeReconstructor import EmgaussEmpiricalMapLaze1Reconstructor, EmgaussEmpiricalMapLaze2Reconstructor
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ..Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from ..Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
+from ..Systems.Timer import Timer
 
 class EmgaussEmpiricalMapLazeReconstructorOnExample(AbstractReconstructorExample):
     """

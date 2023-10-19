@@ -3,17 +3,17 @@ import numpy as np
 import cProfile
 import pylab as plt
 
-from Examples.Gaussian2dBlurWithNoise import Gaussian2dBlurWithNoise
-from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
-from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
-from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
-from Recon.Gaussian.Thresholding import ThresholdingIdentity
-from Recon.NormMinimizer.L2NormMinimizer import L2NormDirectMinimizerReconstructor
-from Recon.AbstractInitialEstimator import InitialEstimatorFactory
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
-from Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from ..Examples.Gaussian2dBlurWithNoise import Gaussian2dBlurWithNoise
+from ..Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
+from ..Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
+from ..Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
+from ..Recon.Gaussian.Thresholding import ThresholdingIdentity
+from ..Recon.NormMinimizer.L2NormMinimizer import L2NormDirectMinimizerReconstructor
+from ..Recon.AbstractInitialEstimator import InitialEstimatorFactory
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ..Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 class T_Recon_Noiseless(unittest.TestCase):
     """

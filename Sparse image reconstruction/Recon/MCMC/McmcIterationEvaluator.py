@@ -1,8 +1,8 @@
 import numpy as np
 import pylab as plt
 
-from Recon.AbstractIterationsObserver import AbstractIterationsObserver
-from Systems.NumericalHelper import NumericalHelper
+from ...Recon.AbstractIterationsObserver import AbstractIterationsObserver
+from ...Systems.NumericalHelper import NumericalHelper
 
 class McmcIterationEvaluator(AbstractIterationsObserver):
     """

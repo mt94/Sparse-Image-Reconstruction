@@ -1,6 +1,6 @@
 import abc
 import numpy as np
-import Channel.ChannelBlock as chb
+from ..Channel import ChannelBlock as chb
 
 class AbstractNoiseGenerator(chb.AbstractChannelBlock):    
     CHANNEL_BLOCK_TYPE = 'NoiseGenerator'     

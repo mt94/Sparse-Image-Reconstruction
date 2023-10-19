@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from Blur import AbstractBlur
+from .Blur import AbstractBlur
 
 class MrfmBlur(AbstractBlur):
     """

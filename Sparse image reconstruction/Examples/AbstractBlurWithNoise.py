@@ -1,9 +1,9 @@
 import abc
 
-from AbstractExample import AbstractExample
-from Channel.ChannelProcessingChain import ChannelProcessingChain
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
+from ..Examples.AbstractExample import AbstractExample
+from ..Channel.ChannelProcessingChain import ChannelProcessingChain
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, NoiseGeneratorFactory
 
 class AbstractBlurWithNoise(AbstractExample):
         

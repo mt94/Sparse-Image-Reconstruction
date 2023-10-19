@@ -1,8 +1,8 @@
 import abc
 import numpy as np
 
-import Channel.ChannelBlock as chb
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ..Channel import ChannelBlock as chb
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 class AbstractPsfNormalizer(chb.AbstractChannelBlock):
     def __init__(self, channelBlockType):

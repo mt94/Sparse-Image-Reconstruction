@@ -2,9 +2,9 @@ import numpy as np
 import pylab as plt
 import unittest
 
-from Sim.SyntheticBlur import SyntheticBlur
-from Systems.ComputeEnvironment import ComputeEnvironment
-from Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
+from ..Sim.SyntheticBlur import SyntheticBlur
+from ..Systems.ComputeEnvironment import ComputeEnvironment
+from ..Systems.PsfLinearDerivative import ConvolutionMatrixZeroMeanUnitNormDerivative
 
 class T_PsfLinearDerivative(unittest.TestCase):
     """

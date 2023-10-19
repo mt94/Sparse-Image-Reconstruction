@@ -1,6 +1,6 @@
 import abc
 import numpy as np
-from Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
 
 # Input keys
 INPUT_KEY_UNIFORMRV_RANGE = 'uniformrv_range'

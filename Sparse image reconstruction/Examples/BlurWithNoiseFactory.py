@@ -1,6 +1,6 @@
-from Gaussian2dBlurWithNoise import Gaussian2dBlurWithNoise
-from Mrfm2dBlurWithNoise import Mrfm2dBlurWithNoise
-from Mrfm3dBlurWithNoise import Mrfm3dBlurWithNoise
+from .Gaussian2dBlurWithNoise import Gaussian2dBlurWithNoise
+from .Mrfm2dBlurWithNoise import Mrfm2dBlurWithNoise
+from .Mrfm3dBlurWithNoise import Mrfm3dBlurWithNoise
 
 class BlurWithNoiseFactory(object):
     _concreteBlurWithNoise = {

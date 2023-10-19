@@ -2,14 +2,14 @@ import math
 #import numpy as np
 import pylab as plt
 
-from AbstractBlurWithNoise import AbstractBlurWithNoise
-import Sim.ImageGeneratorImpl as ImageGeneratorImpl
-from MrfmBlurExample import MrfmBlurExample
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.ImageGeneratorFactory import ImageGeneratorFactory 
-from Sim.MrfmBlur import MrfmBlur
-from Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from .AbstractBlurWithNoise import AbstractBlurWithNoise
+from ..Sim.ImageGeneratorImpl import INPUT_KEY_DISCRETE_VALUES
+from .MrfmBlurExample import MrfmBlurExample
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.ImageGeneratorFactory import ImageGeneratorFactory
+from ..Sim.MrfmBlur import MrfmBlur
+from ..Sim.MrfmBlurParameterOptimizer import MrfmBlurParameterOptimizer
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
 
 class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
     """
@@ -68,7 +68,7 @@ class Mrfm3dBlurWithNoise(AbstractBlurWithNoise):
                          AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: igBorderWidth
                          }
         if ((self.ImageDiscreteNonzeroValues is not None) and (len(self.ImageDiscreteNonzeroValues) > 0)):
-            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.ImageDiscreteNonzeroValues
+            parameterDict[INPUT_KEY_DISCRETE_VALUES] = self.ImageDiscreteNonzeroValues
         ig.SetParameters(**parameterDict)                         
         self.debugMessages.append("Border width in image generator is {0}".format(igBorderWidth))           
         return ig

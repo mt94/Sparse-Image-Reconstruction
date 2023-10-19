@@ -1,8 +1,8 @@
-from ChannelBlock import AbstractChannelBlock
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.Blur import AbstractBlur
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
-from Systems.Timer import Timer
+from .ChannelBlock import AbstractChannelBlock
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.Blur import AbstractBlur
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Systems.Timer import Timer
 
 class ChannelProcessingChain(object):
     @staticmethod

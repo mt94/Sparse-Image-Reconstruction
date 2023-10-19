@@ -1,18 +1,18 @@
 import multiprocessing as mp
 
-from AbstractReconstructorExample import AbstractReconstructorExample
-from BlurWithNoiseFactory import BlurWithNoiseFactory
-from Recon.AbstractInitialEstimator import InitialEstimatorFactory
-from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
-from Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
-from Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
-from Systems.PsfNormalizer import PsfMatrixNormNormalizer
-from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
-import Systems.Thresholding as Thresholding
-from Systems.Timer import Timer
+from .AbstractReconstructorExample import AbstractReconstructorExample
+from .BlurWithNoiseFactory import BlurWithNoiseFactory
+from ..Recon.AbstractInitialEstimator import InitialEstimatorFactory
+from ..Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
+from ..Recon.Gaussian.EmgaussFixedMstepReconstructor import EmgaussFixedMstepReconstructor
+from ..Recon.Gaussian.EmgaussIterationsObserver import EmgaussIterationsObserver
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ..Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from ..Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
+from ..Systems import Thresholding
+from ..Systems.Timer import Timer
 
 class SimpleThresholdingReconstructorExample(AbstractReconstructorExample):
     """

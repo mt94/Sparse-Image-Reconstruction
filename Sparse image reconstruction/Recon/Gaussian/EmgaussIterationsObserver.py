@@ -1,5 +1,5 @@
 import numpy as np
-from Recon.AbstractIterationsObserver import AbstractIterationsObserver
+from ...Recon.AbstractIterationsObserver import AbstractIterationsObserver
 
 class EmgaussIterationsObserver(AbstractIterationsObserver):
         

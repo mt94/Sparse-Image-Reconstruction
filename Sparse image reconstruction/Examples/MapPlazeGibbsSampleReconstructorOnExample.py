@@ -2,17 +2,17 @@ import numpy as np
 import pylab as plt
 from multiprocessing import Pool
 
-from AbstractReconstructorExample import AbstractReconstructorExample
-from BlurWithNoiseFactory import BlurWithNoiseFactory
-from Recon.MCMC.McmcConstants import McmcConstants
-from Recon.MCMC.McmcIterationEvaluator import McmcIterationEvaluator
-from Recon.MCMC.MapPlazeGibbsSamplerReconstructor import MapPlazeGibbsSamplerReconstructor
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
-from Systems.ComputeEnvironment import ComputeEnvironment
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
-from Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
-from Systems.Timer import Timer
+from .AbstractReconstructorExample import AbstractReconstructorExample
+from .BlurWithNoiseFactory import BlurWithNoiseFactory
+from ..Recon.MCMC.McmcConstants import McmcConstants
+from ..Recon.MCMC.McmcIterationEvaluator import McmcIterationEvaluator
+from ..Recon.MCMC.MapPlazeGibbsSamplerReconstructor import MapPlazeGibbsSamplerReconstructor
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Systems.ComputeEnvironment import ComputeEnvironment
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ..Systems.ReconstructorPerformanceCriteria import ReconstructorPerformanceCriteria
+from ..Systems.Timer import Timer
 
 class MapPlazeGibbsSampleReconstructorOnExample(AbstractReconstructorExample):
     """ Constants """

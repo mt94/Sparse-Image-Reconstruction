@@ -1,5 +1,5 @@
 #import types
-from Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
+from ...Recon.Gaussian.AbstractEmgaussReconstructor import AbstractEmgaussReconstructor
 
 class EmgaussFixedMstepReconstructor(AbstractEmgaussReconstructor):
     def __init__(self, optimSettingsDict, funcMstep):

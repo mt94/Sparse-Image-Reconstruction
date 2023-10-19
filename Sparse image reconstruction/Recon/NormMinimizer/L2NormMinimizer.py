@@ -1,6 +1,6 @@
 import numpy as np
-from Recon.AbstractReconstructor import AbstractReconstructor
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
+from ...Recon.AbstractReconstructor import AbstractReconstructor
+from ...Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
 
 """ Implement the explicit (non-iterative) solution. Requires the psf. """
 class L2NormDirectMinimizerReconstructor(AbstractReconstructor):

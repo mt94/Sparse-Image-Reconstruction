@@ -1,4 +1,4 @@
-import Channel.ChannelBlock as chb
+from ..Channel import ChannelBlock as chb
 import numpy as np
 
 class PsfNormalizer(chb.AbstractChannelBlock):   

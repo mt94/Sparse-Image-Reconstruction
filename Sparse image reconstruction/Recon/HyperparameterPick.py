@@ -1,6 +1,6 @@
 import numpy as np
 import pylab as plt
-from AbstractIterationsObserver import AbstractIterationsObserver
+from .AbstractIterationsObserver import AbstractIterationsObserver
 
 class HyperparameterPick(object):
     def __init__(self, iterObserver):
@@ -57,11 +57,3 @@ class HyperparameterPick(object):
             # Fallback case: find the min metric and return the estimate for that iteration
             metricMinInd = self._indexMin(metricVec)
             return (metricMinInd, self._iterObserver.HistoryEstimate[metricMinInd])
-
-        
-        
-        
-        
-    
-        
-    

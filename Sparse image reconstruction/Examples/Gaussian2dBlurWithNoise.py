@@ -1,12 +1,12 @@
 import pylab as plt
 
-from AbstractBlurWithNoise import AbstractBlurWithNoise
-from Sim.AbstractImageGenerator import AbstractImageGenerator
-from Sim.ImageGeneratorFactory import ImageGeneratorFactory
-import Sim.ImageGeneratorImpl as ImageGeneratorImpl
-from Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
-from Sim.SyntheticBlur import SyntheticBlur
-from Systems.PsfNormalizer import PsfMatrixNormNormalizer
+from .AbstractBlurWithNoise import AbstractBlurWithNoise
+from ..Sim.AbstractImageGenerator import AbstractImageGenerator
+from ..Sim.ImageGeneratorFactory import ImageGeneratorFactory
+from ..Sim.ImageGeneratorImpl import INPUT_KEY_DISCRETE_VALUES
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Sim.SyntheticBlur import SyntheticBlur
+from ..Systems.PsfNormalizer import PsfMatrixNormNormalizer
 
 
 class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
@@ -41,7 +41,7 @@ class Gaussian2dBlurWithNoise(AbstractBlurWithNoise):
                          AbstractImageGenerator.INPUT_KEY_BORDER_WIDTH: self._psfSupport[0]
                          }
         if ((self.ImageDiscreteNonzeroValues is not None) and (len(self.ImageDiscreteNonzeroValues) > 0)):
-            parameterDict[ImageGeneratorImpl.INPUT_KEY_DISCRETE_VALUES] = self.ImageDiscreteNonzeroValues        
+            parameterDict[INPUT_KEY_DISCRETE_VALUES] = self.ImageDiscreteNonzeroValues
         ig.SetParameters(**parameterDict)                         
         return ig
                                                         
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     """
     gbNormalizer = PsfMatrixNormNormalizer(1)
     gbNormalizer.NormalizePsf(ex.blurPsfInThetaFrame)
-    print 'Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH()
+    print('Spectral radius of H*H^T is:', gbNormalizer.GetSpectralRadiusGramMatrixRowsH())
     
     # In order to remove the shift, must access the SyntheticBlur block in the channel chain
     blurredImageWithNoiseForDisplay = ex.channelChain \

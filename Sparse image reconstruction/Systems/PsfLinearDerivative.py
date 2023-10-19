@@ -1,6 +1,6 @@
 import numpy as np
-from Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
-from Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf 
+from ..Systems.AbstractConvolutionMatrix import AbstractConvolutionMatrix
+from ..Systems.ConvolutionMatrixUsingPsf import ConvolutionMatrixUsingPsf
     
 class ConvolutionMatrixZeroMeanUnitNormDerivative(AbstractConvolutionMatrix):
     def __init__(self, psfRepH):

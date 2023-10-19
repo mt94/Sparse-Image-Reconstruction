@@ -7,11 +7,11 @@ import pymc
 import scipy.special as spspecial
 import sys
 
-from AbstractMcmcSampler import AbstractMcmcSampler
-from McmcConstants import McmcConstants
-from McmcIterationEvaluator import McmcIterationEvaluator
-from Recon.AbstractReconstructor import AbstractReconstructor
-from Systems.NumericalHelper import NumericalHelper
+from .AbstractMcmcSampler import AbstractMcmcSampler
+from .McmcConstants import McmcConstants
+from .McmcIterationEvaluator import McmcIterationEvaluator
+from ...Recon.AbstractReconstructor import AbstractReconstructor
+from ...Systems.NumericalHelper import NumericalHelper
 
 class PlazeGibbsSamplerReconstructor(AbstractMcmcSampler, AbstractReconstructor):
     """ 

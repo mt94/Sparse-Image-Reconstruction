@@ -1,5 +1,5 @@
-from MrfmBlur import MrfmBlur
-from SyntheticBlur import SyntheticBlur
+from .MrfmBlur import MrfmBlur
+from .SyntheticBlur import SyntheticBlur
 
 class BlurFactory(object):
     _concreteBlur = {
