@@ -36,15 +36,24 @@ class ChannelProcessingChain(object):
         else:
             return y + channelBlock.Generate(y)
 
+    @staticmethod
+    def ProcessDefault(channelBlock, x):
+        if callable(getattr(channelBlock, "Process")):
+            return channelBlock.Process(x)
+        raise TypeError("Expect a Default channelBlock to have a Process method.")
+
     _channelBlockFunctionAcceptsInputDict = {
         "ImageGenerator": False,
         "Blur": True,
         "AdditiveNoiseGenerator": True,
+        "Default": True,
     }
+
     _channelBlockFunctionDict = {
         "ImageGenerator": ProcessImageGenerator,
         "Blur": ProcessBlur,
         "AdditiveNoiseGenerator": ProcessAdditiveNoiseGenerator,
+        "Default": ProcessDefault,
     }
 
     def __init__(self, bSaveAllIntermediateOutput=False):
