@@ -1,7 +1,7 @@
 from .ChannelBlock import AbstractChannelBlock
 from ..Sim.AbstractImageGenerator import AbstractImageGenerator
 from ..Sim.Blur import AbstractBlur
-from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator
+from ..Sim.NoiseGenerator import AbstractAdditiveNoiseGenerator, AbstractNoiseGenerator
 from ..Systems.Timer import Timer
 
 
@@ -27,14 +27,16 @@ class ChannelProcessingChain(object):
             return channelBlock.BlurImage(theta)
 
     @staticmethod
-    def ProcessAdditiveNoiseGenerator(channelBlock, y):
-        if not issubclass(channelBlock.__class__, AbstractAdditiveNoiseGenerator):
+    def ProcessNoiseGenerator(channelBlock, y):
+        if issubclass(channelBlock.__class__, AbstractAdditiveNoiseGenerator):
+            return y + channelBlock.Generate(y)
+        elif issubclass(channelBlock.__class__, AbstractNoiseGenerator):
+            return channelBlock.Generate(y)
+        else:
             raise TypeError(
                 "Expect channelBlock to be a AbstractAdditiveNoiseGenerator. Instead, it's a "
                 + channelBlock.__class__.__name__
             )
-        else:
-            return y + channelBlock.Generate(y)
 
     @staticmethod
     def ProcessDefault(channelBlock, x):
@@ -46,13 +48,15 @@ class ChannelProcessingChain(object):
         "ImageGenerator": False,
         "Blur": True,
         "AdditiveNoiseGenerator": True,
+        "NoiseGenerator": True,
         "Default": True,
     }
 
     _channelBlockFunctionDict = {
         "ImageGenerator": ProcessImageGenerator,
         "Blur": ProcessBlur,
-        "AdditiveNoiseGenerator": ProcessAdditiveNoiseGenerator,
+        "AdditiveNoiseGenerator": ProcessNoiseGenerator,
+        "NoiseGenerator": ProcessNoiseGenerator,
         "Default": ProcessDefault,
     }
 
