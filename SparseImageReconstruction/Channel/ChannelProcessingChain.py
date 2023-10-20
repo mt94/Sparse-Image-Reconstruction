@@ -24,7 +24,7 @@ class ChannelProcessingChain(object):
                 + channelBlock.__class__.__name__
             )
         else:
-            return channelBlock.BlurImage(theta)
+            return channelBlock.Blur(theta)
 
     @staticmethod
     def ProcessNoiseGenerator(channelBlock, y):

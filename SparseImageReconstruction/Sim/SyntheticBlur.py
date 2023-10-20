@@ -64,7 +64,7 @@ class SyntheticBlur(AbstractBlur):
                 "SyntheticBlur type " + self._blurType + " hasn't been implemented"
             )
 
-    def BlurImage(self, theta):
+    def Blur(self, theta):
         if self._blurType == SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D:
             self._thetaShape = theta.shape
             if len(self._thetaShape) != 2:

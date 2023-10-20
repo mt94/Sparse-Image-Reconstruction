@@ -32,9 +32,9 @@ class T_PlazeGibbsSamplerReconstructor(unittest.TestCase):
             SyntheticBlur.INPUT_KEY_NKHALF: 5,
         }
         gb = SyntheticBlur(SyntheticBlur.BLUR_GAUSSIAN_SYMMETRIC_2D, blurParametersDict)
-        gb.BlurImage(
+        gb.Blur(
             np.zeros((32, 32))
-        )  # Have to invoke BlurImage for the BlurPsfInThetaFrame property to work
+        )  # Have to invoke Blur for the BlurPsfInThetaFrame property to work
         convMatrixObj = ConvolutionMatrixUsingPsf(gb.BlurPsfInThetaFrame)
 
         # Construct a TestGibbsSamplerReconstructor object

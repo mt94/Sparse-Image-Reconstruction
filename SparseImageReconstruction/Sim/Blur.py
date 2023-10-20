@@ -64,5 +64,5 @@ class AbstractBlur(chb.AbstractChannelBlock):
         return psfInThetaFrame
 
     @abc.abstractmethod
-    def BlurImage(self, theta):
+    def Blur(self, theta):
         raise NotImplementedError("No default abstract method implemented")

@@ -29,7 +29,7 @@ class T_PsfLinearDerivative(unittest.TestCase):
         imgBinaryRandom = np.random.randint(
             2, size=T_PsfLinearDerivative.TEST_IMAGE_SHAPE
         )
-        yBinaryRandomWoCorrection = gb.BlurImage(imgBinaryRandom)
+        yBinaryRandomWoCorrection = gb.Blur(imgBinaryRandom)
         self.assertNotAlmostEqual(
             0, np.mean(yBinaryRandomWoCorrection.flat), EPS_PRECISION_PLACES
         )

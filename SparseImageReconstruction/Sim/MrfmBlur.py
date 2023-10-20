@@ -241,7 +241,7 @@ class MrfmBlur(AbstractBlur):
             blurShift[2] = 0
         self._blurShift = tuple(blurShift)
 
-    def BlurImage(self, theta):
+    def Blur(self, theta):
         self._thetaShape = theta.shape
 
         if self._blurPsf is None:
