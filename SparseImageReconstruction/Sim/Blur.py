@@ -21,7 +21,7 @@ class AbstractBlur(chb.AbstractChannelBlock):
         else:
             assert len(anImage.shape) == len(self.BlurShift)
             tmp = anImage
-            assert np.all(self.BlurShift > 0)
+            assert np.all(np.array(self.BlurShift) > 0)
             for axisInd in range(len(self.BlurShift)):
                 tmp = np.roll(
                     tmp, int(-math.floor(self.BlurShift[axisInd])), axis=axisInd
